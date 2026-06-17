@@ -1,0 +1,23 @@
+Candidate: Jordan Lee
+Candidate ID: C-001
+Interviewer: Priya Sharma
+Interviewer ID: I-01
+Round: Technical Screen (45 min)
+Date: 2024-05-08
+Assigned Competencies: Statistical Reasoning, Causal Inference, Communication
+Score: 4/5
+Score Scale: 1 (Does Not Meet Bar) – 5 (Exceptional)
+
+---
+
+Overall this was a strong technical screen. Jordan clearly has a solid grounding in statistics and I would recommend advancing to the full loop.
+
+On the A/B testing design question, Jordan immediately asked about the traffic split and the minimum detectable effect before designing anything. That is exactly the right instinct. They correctly computed the required sample size (walked through the power calculation step by step) and flagged that the test needed to run for at least two weeks to capture weekly seasonality. I was impressed that they brought up seasonality without prompting — most candidates do not think about that.
+
+When I introduced the follow-up about a confounded launch (we ran the feature for VIP users first before randomizing), Jordan immediately identified that this creates a selection bias and that any early data from the VIP cohort cannot be used to estimate the average treatment effect on the broader population. They explained why: VIP users are not representative, so including them would bias the estimate upward. The explanation was clear and correct.
+
+Communication was good. Jordan structured responses well — started with the core point, then elaborated. Occasionally went a bit deep on math before checking whether I was following, but adjusted when I signaled. I wouldn't call this a concern, just something to watch.
+
+One area I did not probe: product judgment. We ran out of time. I cannot speak to whether Jordan connects statistical work to business decisions.
+
+Score rationale: 4 because the statistical reasoning and causal inference were clearly strong. Would have been a 5 if they had connected the work to business impact without prompting, but that was partially my fault for not asking.

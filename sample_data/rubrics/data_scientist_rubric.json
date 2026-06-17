@@ -1,0 +1,143 @@
+{
+  "rubric_id": "rubric-ds-001",
+  "role_title": "Data Scientist / Quantitative Researcher",
+  "role_level": "Senior IC",
+  "department": "Research & Analytics",
+  "competencies": [
+    {
+      "competency_id": "stat_reasoning",
+      "name": "Statistical Reasoning",
+      "description": "Applies statistical concepts correctly; draws sound inferences from data; understands limitations of methods (bias, variance, confounding); can identify flaws in a study design.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "correctly identifies sources of bias without prompting",
+        "explains confidence intervals and what they imply",
+        "discusses assumptions behind a model and when they break down",
+        "proactively mentions confounders or selection effects",
+        "distinguishes correlation from causation unprompted"
+      ],
+      "negative_indicators": [
+        "conflates correlation with causation",
+        "cannot explain p-value interpretation",
+        "misses obvious selection bias when prompted",
+        "gives shallow or circular explanation after follow-up",
+        "over-claims certainty from observational data"
+      ]
+    },
+    {
+      "competency_id": "product_judgment",
+      "name": "Product Judgment",
+      "description": "Understands business context and user needs; connects analytical work to product decisions; thinks about impact and tradeoffs; can translate insights into recommendations.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "frames analysis in terms of business outcome",
+        "asks clarifying questions about the decision being made",
+        "proactively considers downstream impact of a recommendation",
+        "translates ambiguous business question into a tractable analysis"
+      ],
+      "negative_indicators": [
+        "answers stay at the technical level without connecting to business value",
+        "cannot articulate who would use the output and why",
+        "treats the analysis as the end goal rather than a means to a decision",
+        "ignores stakeholder context when asked directly"
+      ]
+    },
+    {
+      "competency_id": "coding_ability",
+      "name": "Coding Ability",
+      "description": "Writes correct, readable, efficient code in Python (primary) or SQL; handles edge cases; can reason about complexity; writes testable functions.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "produces working code on first attempt or corrects quickly",
+        "handles null values and edge cases proactively",
+        "explains complexity tradeoffs",
+        "writes modular, readable functions",
+        "uses vectorized operations where appropriate"
+      ],
+      "negative_indicators": [
+        "code fails on basic edge cases",
+        "cannot explain time or space complexity",
+        "produces O(n²) solution to a problem with a clear O(n) approach",
+        "relies heavily on hints to fix bugs"
+      ]
+    },
+    {
+      "competency_id": "causal_inference",
+      "name": "Causal Inference",
+      "description": "Understands the difference between observational and experimental data; knows when and how to apply methods such as A/B testing, diff-in-diff, instrumental variables, or regression discontinuity.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "correctly designs an A/B test including power calculation",
+        "identifies when observational data cannot support a causal claim",
+        "suggests an appropriate quasi-experimental method with justification",
+        "discusses threats to validity (SUTVA, exclusion restriction, etc.)"
+      ],
+      "negative_indicators": [
+        "cannot articulate why randomization matters",
+        "does not know what a confounder is",
+        "proposes causal conclusions from correlational data without caveats",
+        "cannot describe what an instrumental variable does conceptually"
+      ]
+    },
+    {
+      "competency_id": "communication",
+      "name": "Communication",
+      "description": "Explains technical concepts clearly to a mixed audience; listens actively; tailors depth to the listener; uses concrete examples; structures a response before speaking.",
+      "required": true,
+      "weight": 1.0,
+      "positive_indicators": [
+        "leads with the conclusion, then explains",
+        "checks whether the explanation landed",
+        "uses a concrete analogy to explain an abstract concept",
+        "adjusts depth when interviewer signals confusion"
+      ],
+      "negative_indicators": [
+        "jumps to technical detail before framing the question",
+        "provides long answers without a clear structure",
+        "does not check whether the explanation was understood",
+        "cannot simplify when asked to explain to a non-technical stakeholder"
+      ]
+    },
+    {
+      "competency_id": "collaboration",
+      "name": "Collaboration",
+      "description": "Works constructively with cross-functional partners; receptive to feedback; gives credit; handles disagreement professionally.",
+      "required": false,
+      "weight": 0.75,
+      "positive_indicators": [
+        "describes a situation where they changed direction based on feedback",
+        "gives specific credit to teammates",
+        "describes productive disagreement with a colleague"
+      ],
+      "negative_indicators": [
+        "takes sole credit for team outcomes",
+        "dismisses or ignores feedback during the interview exercise",
+        "describes conflicts without any self-reflection"
+      ]
+    },
+    {
+      "competency_id": "ambiguity_handling",
+      "name": "Ambiguity Handling",
+      "description": "Comfortable operating with incomplete information; makes reasonable assumptions and states them explicitly; asks clarifying questions before diving into details.",
+      "required": true,
+      "weight": 1.25,
+      "positive_indicators": [
+        "asks 1–2 targeted clarifying questions before attempting a solution",
+        "explicitly states assumptions and checks if they are reasonable",
+        "makes progress despite missing information",
+        "updates approach when new information is introduced"
+      ],
+      "negative_indicators": [
+        "freezes when the problem is underspecified",
+        "makes major assumptions without stating them",
+        "asks too many clarifying questions before making any attempt",
+        "does not update approach when given corrective feedback"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

@@ -1,0 +1,27 @@
+Candidate: Jordan Lee
+Candidate ID: C-001
+Interviewer: Sonya Park
+Interviewer ID: I-03
+Round: Product & Business Case (45 min)
+Date: 2024-05-13
+Assigned Competencies: Product Judgment, Communication, Ambiguity Handling
+Score: 2/5
+Score Scale: 1 (Does Not Meet Bar) – 5 (Exceptional)
+
+---
+
+I want to be honest that this was a difficult debrief to write because Jordan is clearly technically strong — I have seen the other debriefs — but my interview revealed what I think is a significant gap that the team needs to weigh carefully.
+
+The case was: "Our daily active user count dropped 15% last Tuesday. Walk me through how you would investigate this."
+
+Jordan immediately went to a technical diagnostic — cohort analysis, funnel breakdown, device/platform splits. The framework was methodologically correct. But I had to ask three times before Jordan addressed the question: "Who cares about this number and what decision are they making?" Each time I asked, Jordan answered briefly and then returned to the technical methodology. By the end of the interview, I still didn't have a clear sense that Jordan understands that the analytical work exists to support a decision, not as an end in itself.
+
+On a follow-up question — "If you had to present your findings to the VP of Product in 3 minutes, what would you lead with?" — Jordan led with "I would first describe the methodology I used." That is the wrong instinct for a senior role. A VP cares about the answer, the confidence level, and what to do next. Jordan was asked to try again and gave a better response the second time, but it required explicit coaching.
+
+I also noticed Jordan made a significant assumption (that the drop was on mobile) that turned out to be incorrect when I introduced new data. Jordan's reaction was to say "OK, let me re-run the analysis for desktop." There was no reflection on why the initial assumption was wrong or whether the methodology needed to change. This felt like a pattern, not a one-off.
+
+Communication: when explaining technical concepts, Jordan was clear. When bridging to business context, Jordan was weak. I would say communication is competency-specific — strong technically, weak in stakeholder framing.
+
+Score rationale: 2. I want to be precise about why this is a 2 and not a 3. The candidate was explicitly coached on the VP framing question, required multiple prompts to address the business context, and showed no self-correction after the assumption proved wrong. These are senior-role behaviors I'd expect at this level without prompting. A 3 would mean "meets bar with development needed" — I am not confident this gap is a development item at this stage.
+
+Note: I am aware this is a materially lower score than the technical screens. I think those interviews legitimately tested different things. I am not saying Jordan performed poorly overall — I am saying that on the competencies I was responsible for, the performance did not meet the bar.

@@ -1,0 +1,25 @@
+Candidate: Jordan Lee
+Candidate ID: C-001
+Interviewer: Dana Osei
+Interviewer ID: I-05
+Round: Collaboration & Cross-Functional Fit (30 min)
+Date: 2024-05-15
+Assigned Competencies: Collaboration, Communication, Product Judgment
+Score: 3/5
+Score Scale: 1 (Does Not Meet Bar) – 5 (Exceptional)
+
+---
+
+Fine interview, nothing alarming but nothing that really stood out.
+
+Jordan seemed like a solid collaborator based on the behavioral questions. When I asked about a time they disagreed with a product manager, they described a situation where they thought the experiment design was flawed and pushed back. They said the PM eventually came around to their view. The example was fine but Jordan told it entirely from their own perspective — I had to prompt "how do you think the PM experienced that conversation?" and the answer was pretty surface-level ("I think they appreciated the technical input"). I don't think Jordan has thought deeply about what cross-functional partnership looks like from the other side.
+
+On product judgment: Jordan mentioned they enjoy working on problems that matter to users. That's a good instinct. But when I asked to give an example of an insight that changed a product decision, Jordan described an analysis they ran, a conclusion they reached, and then said "I handed it off to the PM from there." I followed up: "What happened to the recommendation?" Jordan did not know. In my experience, senior data scientists who have strong product instincts track what happens to their recommendations. Not knowing is a mild signal, not a disqualifier — but worth noting.
+
+Communication in this interview was fine. Responses were clear and organized. I did not observe the stakeholder framing weakness that I understand Sonya flagged.
+
+I want to flag: I don't know if I observed anything meaningful in 30 minutes that couldn't have been observed in 10. The collaboration questions I used may not have been differentiated enough to separate strong from adequate.
+
+Score rationale: 3. Meets bar. I don't have enough signal to go higher. Nothing that concerned me.
+
+Note: I was not assigned causal inference or statistical reasoning and did not test those.

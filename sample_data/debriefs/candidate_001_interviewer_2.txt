@@ -1,0 +1,23 @@
+Candidate: Jordan Lee
+Candidate ID: C-001
+Interviewer: Marcus Webb
+Interviewer ID: I-02
+Round: Coding & Data Manipulation (60 min)
+Date: 2024-05-10
+Assigned Competencies: Coding Ability, Statistical Reasoning, Ambiguity Handling
+Score: 3/5
+Score Scale: 1 (Does Not Meet Bar) – 5 (Exceptional)
+
+---
+
+Mixed interview. There were clear strengths in data manipulation but some real gaps in code quality that I think are important to flag.
+
+Jordan completed the pandas exercise correctly — grouped a time series by cohort, computed rolling averages, handled a tricky date-boundary edge case without any prompting. That part was good. Code was readable. They used vectorized operations rather than a Python loop, which shows awareness of performance.
+
+However, the SQL problem revealed a real gap. When I asked them to write a query to identify users who made at least 3 purchases in the first 30 days after signup but did not make a purchase in the subsequent 60 days (a retention analysis), Jordan struggled significantly. The first attempt had a logical error in the window function — they applied PARTITION BY on the wrong column, which would have produced incorrect counts. When I pointed to the PARTITION BY clause and asked them to check it, they stared at it for about 90 seconds before asking me if the error was in the GROUP BY instead. They eventually got to the right answer with a second hint, but the path was slow and required two prompts from me.
+
+For ambiguity handling: the problem statement was intentionally vague about what "first purchase date" means (calendar date vs. timestamp to the millisecond). Jordan did not ask about this at all. They assumed calendar date, which happened to be correct, but the assumption was never stated. In production, an unstated assumption on a retention metric can cause downstream errors that are hard to trace.
+
+Statistical reasoning: I did not formally test this — it wasn't in my assigned scope after the screen, and we ran short on time due to the SQL exercise taking longer than expected.
+
+Score rationale: 3. Strong on Python/pandas, materially weaker on SQL — this is a role where SQL proficiency matters. The unstated assumption bothers me more than the SQL error, because it suggests a habit rather than a one-time mistake.

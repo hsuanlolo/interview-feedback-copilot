@@ -1,0 +1,27 @@
+Candidate: Jordan Lee
+Candidate ID: C-001
+Interviewer: Thomas Becker
+Interviewer ID: I-04
+Round: Causal Inference Deep Dive (60 min)
+Date: 2024-05-14
+Assigned Competencies: Causal Inference, Statistical Reasoning, Ambiguity Handling
+Score: 5/5
+Score Scale: 1 (Does Not Meet Bar) – 5 (Exceptional)
+
+---
+
+One of the best causal inference interviews I have conducted in two years of interviewing for this role. Giving a 5 with confidence.
+
+The main exercise: I presented an observational dataset from a marketing campaign (email sent vs. not sent) and asked whether the email caused the observed increase in conversion. Jordan's response was methodical and impressive. Within two minutes, they had identified three threats to validity without any prompting: (1) self-selection into the email list (subscribers are different from non-subscribers), (2) post-treatment contamination (some users who received the email forwarded it to people not in the treatment group), and (3) the possibility that the campaign launched during an unusual period, making historical controls unreliable.
+
+Jordan then proposed a regression discontinuity design using the email score cutoff as the instrument, explained the exclusion restriction clearly ("the only way the email score affects conversion is through actually receiving the email — we need to think about whether that holds"), and noted the bandwidth tradeoff. I asked whether IV was appropriate here; Jordan correctly said that IV would require a different instrument (the RD was the right approach given the score cutoff) and explained why. This is a level of precision I do not often see.
+
+I then asked Jordan to walk me through a power calculation for an A/B test of the same campaign. They got the formula right, discussed the MDE tradeoff (smaller MDE requires more power), and flagged that conversion rates vary significantly by device type, so we should stratify the randomization.
+
+Ambiguity handling was strong. The dataset description was intentionally incomplete (I did not specify whether "conversion" meant first purchase or any purchase). Jordan asked exactly the right clarifying question upfront and stated the implication of each definition on the analysis plan.
+
+Statistical reasoning is hard to separate from causal inference in this context — both were excellent.
+
+I am aware there are other interviewers with lower scores. I can only speak to what I observed. In my session, Jordan performed at a level that would be appropriate for a staff or principal scientist, not just a senior IC.
+
+Score rationale: 5. I did not observe anything that I would flag as a gap within the scope of my interview.
