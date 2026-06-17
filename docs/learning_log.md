@@ -112,4 +112,46 @@ Then run the baseline extractor (after Milestone 5) and check if it finds those 
 
 ---
 
+## Milestone 4: FastAPI API Skeleton
+
+**What changed:**  
+Added three routers (`rubrics`, `debriefs`, `projects`), an in-memory store, and 29 integration tests. The server now starts and all five PROMPT 4 endpoints are live.
+
+**Why designed this way:**  
+**Thin routers, logic in services.** Each router file is ~30 lines — it receives the HTTP request, delegates to a service or store, and returns a response. The store holds the business data. This separation means you can test the store logic (unit test) and the HTTP contract (integration test) independently.
+
+**The store is a singleton dict.** Rather than reach for a database on day one, we keep the state in a module-level object. This is deliberately fragile (data disappears on restart) — the point is to prove the API works before adding migration complexity.
+
+**Engineering concept to understand:**  
+**REST API design.** `POST /projects` creates a resource and returns `201 Created`. `GET /projects/{id}` returns that resource or `404 Not Found`. `422 Unprocessable Entity` is returned automatically by FastAPI + Pydantic when the request body fails validation — you don't have to write that error handling yourself. This is one of FastAPI's core value propositions.
+
+**Automatic API docs.** Run the server and visit `http://localhost:8000/docs`. FastAPI generates an interactive Swagger UI from your code — no extra work. This is your first testing surface for collaborators who don't write Python.
+
+**How to test it manually:**
+```bash
+cd backend
+uvicorn app.main:app --reload
+
+# In another terminal:
+curl http://localhost:8000/health
+curl http://localhost:8000/rubrics/sample | python -m json.tool
+curl http://localhost:8000/debriefs/sample | python -m json.tool | head -30
+
+# Create a project
+curl -X POST http://localhost:8000/projects \
+  -H "Content-Type: application/json" \
+  -d '{"candidate_name": "Jordan Lee", "role_title": "Data Scientist"}'
+
+# Then GET it with the returned project_id
+curl http://localhost:8000/projects/<project_id>
+```
+
+Or visit `http://localhost:8000/docs` and use the interactive UI.
+
+**What could fail in production:**  
+1. **State loss.** The in-memory store loses all data on restart. Fine for demos; unacceptable for production. Fix: database (PROMPT 15).  
+2. **No auth.** Anyone with the URL can create projects. Fix: authentication middleware (post-v1 scope).  
+3. **No input size limit.** A very large debrief body could exhaust memory. Fix: FastAPI body size limits + request size middleware.  
+4. **CORS.** The default config only allows `localhost:3000`. Fix: configure `CORS_ORIGINS` env var for the deployed frontend URL.
+
 <!-- Future milestones will be appended below -->

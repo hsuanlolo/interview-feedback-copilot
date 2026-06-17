@@ -1,5 +1,9 @@
 """Application configuration loaded from environment variables."""
 
+from __future__ import annotations
+
+from typing import List
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,7 +21,7 @@ class Settings(BaseSettings):
     # App
     app_title: str = "Interview Feedback Copilot"
     app_version: str = "0.1.0"
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: List[str] = ["http://localhost:3000"]
 
     # Extraction
     max_debrief_size_chars: int = 50_000  # ~10k words, well above realistic debrief length

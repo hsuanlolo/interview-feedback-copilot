@@ -108,7 +108,7 @@ Read this before every coding session.
 - [ ] PROMPT 1: Repo structure
 - [ ] PROMPT 2: Pydantic data models
 - [ ] PROMPT 3: Sample data
-- [ ] PROMPT 4: FastAPI skeleton
+- [x] PROMPT 4: FastAPI skeleton
 - [ ] PROMPT 5: Deterministic baseline extractor
 - [ ] PROMPT 6: LLM extraction interface
 - [ ] PROMPT 7: Evidence verification
