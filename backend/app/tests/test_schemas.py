@@ -63,7 +63,7 @@ class TestEvidenceSpan:
             )
 
     def test_quoted_text_min_length(self):
-        with pytest.raises(ValidationError, match="min_length"):
+        with pytest.raises(ValidationError, match="at least 5"):
             EvidenceSpan(
                 source_debrief_id="d1",
                 interviewer_name="Alice",
@@ -102,7 +102,7 @@ class TestExtractedSignal:
         assert sig.signal_type == SignalType.POSITIVE
 
     def test_requires_at_least_one_evidence_span(self):
-        with pytest.raises(ValidationError, match="at least one"):
+        with pytest.raises(ValidationError, match="at least 1"):
             ExtractedSignal(
                 debrief_id="d1",
                 competency_id="stat_reasoning",
@@ -135,7 +135,7 @@ class TestExtractedSignal:
             )
 
     def test_claim_min_length(self):
-        with pytest.raises(ValidationError, match="min_length"):
+        with pytest.raises(ValidationError, match="at least 5"):
             ExtractedSignal(
                 debrief_id="d1",
                 competency_id="stat_reasoning",
@@ -171,7 +171,7 @@ class TestInterviewDebrief:
         assert debrief.word_count == 5
 
     def test_raw_text_too_short(self):
-        with pytest.raises(ValidationError, match="min_length"):
+        with pytest.raises(ValidationError, match="at least 10"):
             InterviewDebrief(
                 candidate_id="c1",
                 interviewer_name="Alice",

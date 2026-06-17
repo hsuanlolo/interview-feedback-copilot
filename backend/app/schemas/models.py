@@ -14,8 +14,8 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated
-from uuid import UUID, uuid4
+from typing import Optional
+from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -317,7 +317,7 @@ class SynthesisReport(BaseModel):
     )
     reviewer_approved: bool = False
     reviewer_name: str = ""
-    reviewed_at: datetime | None = None
+    reviewed_at: Optional[datetime] = None
 
     # Provenance
     created_at: datetime = Field(default_factory=datetime.utcnow)
