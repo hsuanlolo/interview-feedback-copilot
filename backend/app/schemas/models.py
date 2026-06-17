@@ -357,6 +357,13 @@ class VerificationResult(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+class VerificationRequest(BaseModel):
+    """Input to the EvidenceVerifier endpoint."""
+
+    signals: list[ExtractedSignal]
+    debriefs: list[InterviewDebrief]
+
+
 class ExtractionRequest(BaseModel):
     debriefs: list[InterviewDebrief]
     rubric: RoleRubric

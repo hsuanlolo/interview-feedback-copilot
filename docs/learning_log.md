@@ -254,4 +254,50 @@ python -m pytest app/tests/test_llm_extractor.py -v
 3. **Long debriefs approach token limits.** A 10,000-word debrief plus the rubric plus the system prompt can exceed `max_tokens=4096` for the output. Consider chunking very long debriefs by competency or adding input size validation in the endpoint.  
 4. **Cost.** At current claude-opus-4-8 pricing, 5 rich debriefs = ~10,000 tokens input + ~2,000 tokens output ≈ $0.10–0.15 per extraction run. Fine for demo; budget for production throughput.
 
+---
+
+## Milestone 7: Evidence Verifier
+
+**What changed:**  
+Added `backend/app/services/evidence_verifier.py` (`EvidenceVerifier`, `_check_span`), `backend/app/routers/verify.py` (`POST /verify/evidence`), and `VerificationRequest` schema. Added 26 new tests, including an end-to-end integration test that runs the baseline extractor and then verifies every returned span. Total test count: 148.
+
+**Why designed this way:**  
+**Verification is a separate pass, not part of extraction.** The extractor produces signals; the verifier independently confirms that each signal's evidence actually exists at the stated position. Keeping them separate means you can swap or upgrade either component — a better LLM extractor still gets verified the same way. It also lets you verify baseline-extracted signals and LLM-extracted signals through a single, auditable code path.
+
+**Three failure modes, deliberately distinct:**
+- `text_not_found` — the quoted text does not appear anywhere in the debrief. This is a hallucination: the LLM invented a quote. Hard failure; synthesis blocked.
+- `offset_mismatch` — the text exists in the debrief but not at the stated `[start_char:end_char]`. This is an extractor bug: the text is real but the index is wrong. Still a hard failure because the span is unusable as a verifiable citation until fixed.
+- `source_missing` — the span references a `debrief_id` that wasn't provided to the verifier. This catches pipeline integration errors where debriefs and signals are assembled from different runs.
+
+**`is_valid` is a hard binary gate.** Any single error flips `is_valid=False`. This mirrors the eval plan's "citation validity 100% (hard gate)" requirement. The `citation_validity_rate` field gives the reviewer a proportional view (e.g., "19 of 20 spans valid"), but synthesis in PROMPT 10 will check `is_valid`, not the rate.
+
+**`is_vague` is a reviewer flag, not a validity error.** A vague signal (hedged language) with a valid span is still a valid citation — the evidence is real, just thin. The reviewer sees it in `vague_claims` and decides whether to include or remove it from the report.
+
+**Engineering concept to understand:**  
+**model_construct() for adversarial testing.** Tests for the verifier need spans with deliberately invalid offsets or invented text. Pydantic's normal constructors would reject these. `model_construct()` bypasses all validators, letting tests create intentionally broken objects to confirm the verifier detects them. This is the correct tool when you want to test downstream validation logic with inputs that would never reach production through normal paths.
+
+**How to test it manually:**
+```bash
+cd backend
+uvicorn app.main:app --reload
+
+# Step 1: get signals from the baseline extractor
+curl http://localhost:8000/rubrics/sample > rubric.json
+curl http://localhost:8000/debriefs/sample | python -c "import json,sys; d=json.load(sys.stdin); print(json.dumps(d[0]))" > debrief.json
+
+# Step 2: POST /extract/baseline, save the signals
+
+# Step 3: POST /verify/evidence with the signals + the debrief
+# Use /docs Swagger UI — it's easier to compose nested JSON there.
+# Expected: is_valid=true, citation_validity_rate=1.0 for baseline-extracted signals.
+
+# Run tests
+python -m pytest app/tests/test_evidence_verifier.py -v
+```
+
+**What could fail in production:**
+1. **Unicode character boundaries.** Python string indexing works on Unicode code points. If a debrief contains multi-byte characters (em-dashes, smart quotes, non-ASCII names) and the LLM returns offsets computed from byte positions (e.g., from a different tokenization), `start_char:end_char` indexing will be wrong. The verifier will catch this as `offset_mismatch`, but the underlying cause may need a byte-vs-character encoding fix at the ingestion layer.
+2. **Debrief mutation.** If the stored debrief text differs from the text that was used during extraction (e.g., whitespace normalization on ingest), all spans will fail verification even if they were correct at extraction time. Store the text exactly as it was submitted.
+3. **Large signal sets.** With 5 debriefs × 7 competencies × 3 extractors, the signal set can be large. The verifier is O(signals × spans) and very fast per span (just string operations), but watch for memory pressure if all signals are passed in one request. PROMPT 15's database persistence will help by keeping only relevant signals in memory.
+
 <!-- Future milestones will be appended below -->

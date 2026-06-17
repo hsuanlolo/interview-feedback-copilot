@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import debriefs, extract, projects, rubrics
+from app.routers import debriefs, extract, projects, rubrics, verify
 
 app = FastAPI(
     title=settings.app_title,
@@ -28,13 +28,7 @@ app.include_router(rubrics.router)
 app.include_router(debriefs.router)
 app.include_router(projects.router)
 app.include_router(extract.router)
-
-# Future routers (added as each PROMPT milestone is completed):
-# from app.routers import extract, analyze, synthesize, review
-# app.include_router(extract.router)
-# app.include_router(analyze.router)
-# app.include_router(synthesize.router)
-# app.include_router(review.router)
+app.include_router(verify.router)
 
 
 # ── System endpoints ─────────────────────────────────────────────────────────
