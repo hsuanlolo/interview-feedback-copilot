@@ -154,4 +154,55 @@ Or visit `http://localhost:8000/docs` and use the interactive UI.
 3. **No input size limit.** A very large debrief body could exhaust memory. Fix: FastAPI body size limits + request size middleware.  
 4. **CORS.** The default config only allows `localhost:3000`. Fix: configure `CORS_ORIGINS` env var for the deployed frontend URL.
 
+---
+
+## Milestone 5: Deterministic Baseline Extractor
+
+**What changed:**  
+Added `backend/app/services/baseline_extractor.py` — a keyword-matching extractor that produces `ExtractedSignal` objects without calling any LLM. Added `backend/app/routers/extract.py` with `POST /extract/baseline` (live) and `POST /extract/llm` (501 stub). Added 37 new tests in `backend/app/tests/test_baseline_extractor.py`. Total test count: 84.
+
+**Why designed this way:**  
+**Baseline-first evaluation.** Before writing a single LLM prompt, we need a lower bound: how well does the dumbest possible extractor do? This makes the LLM's value measurable. If the LLM extractor achieves 80% recall and the baseline achieves 45%, that 35-point lift is evidence the LLM is worth its cost and latency.
+
+The baseline has known, designed-in limitations: it cannot handle negation ("did not demonstrate strong reasoning" → classified POSITIVE because "strong" is present), it misses signals phrased without rubric vocabulary, and it conflates competencies that share generic vocabulary. These are documented in the module docstring — this transparency is the design, not a bug.
+
+**The offset problem.** Every `EvidenceSpan` must carry `start_char` and `end_char` that point into the original `raw_text`. This means when the extractor processes only the body (after the "---" separator), offsets must be adjusted by `body_offset` before being stored. The test `test_span_offsets_are_valid` verifies this by doing `raw_text[start_char:end_char] == quoted_text` for every span returned by the endpoint.
+
+**Confidence is a gradient, not a binary.** Confidence scores differentiate three cases: rubric indicator phrase match (0.75), generic sentiment vocabulary match (0.50), and no sentiment signal (0.25/UNCLEAR). The LLM extractor will produce finer-grained confidence from its reasoning trace.
+
+**Engineering concept to understand:**  
+**Text extraction with character offsets.** A naive implementation stores which sentence matched but not where in the original document. Adding character offsets (`start_char`, `end_char`) enables three things: (1) a verifier can check that `raw_text[start:end] == quoted_text`, catching hallucinated citations; (2) the frontend can highlight the exact span; (3) the eval suite can measure whether the LLM and baseline agree on the same text. Offsets are annoying to get right (off-by-one errors are common) but they are the foundation of an honest citation system.
+
+**How to test it manually:**
+```bash
+cd backend
+uvicorn app.main:app --reload
+
+# In another terminal:
+# 1. Get the sample rubric
+curl http://localhost:8000/rubrics/sample > rubric.json
+
+# 2. Get a sample debrief
+curl http://localhost:8000/debriefs/sample | python -m json.tool | head -40
+
+# 3. Run baseline extraction (build the JSON manually or use /docs)
+# Visit http://localhost:8000/docs → POST /extract/baseline
+# Paste the rubric JSON and one debrief object, click Execute.
+
+# 4. Run tests
+python -m pytest app/tests/test_baseline_extractor.py -v
+```
+
+Key things to inspect in the response:
+- `extractor_used`: should be `"baseline-v1"`
+- `total_signals`: should be ≥ 1 for a substantive debrief
+- Each signal's `evidence_spans[].quoted_text` should be verbatim text from the debrief
+- `warnings`: will note short debriefs or debriefs with no vocabulary overlap
+
+**What could fail in production:**  
+1. **Negation blindness.** "The candidate did not show strong statistical reasoning" will be classified POSITIVE because "strong" matches `_POSITIVE_WORDS`. This is acceptable for the baseline (we document it); the LLM extractor must handle it.  
+2. **Offset drift from Unicode.** If the raw text contains multi-byte UTF-8 characters (e.g., smart quotes, em-dashes), Python's `str.find()` and string indexing work on Unicode code points, not bytes. This is correct for our use case (we store the Python string, not bytes). Watch for issues if the frontend or database introduces byte-level indexing.  
+3. **Rubric vocabulary mismatch.** If interviewers use "quantitative thinking" instead of "statistical reasoning," the baseline will miss the signal. The LLM extractor handles paraphrasing; the baseline does not.  
+4. **Span cap.** We cap at 4 evidence spans per signal. For very long, rich debriefs, relevant sentences beyond the first 4 are silently dropped. This is a deliberate simplification — the claim should be supported by the first 4 matches; more is noise for the reviewer.
+
 <!-- Future milestones will be appended below -->
