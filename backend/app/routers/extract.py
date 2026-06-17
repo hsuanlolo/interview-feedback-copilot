@@ -2,15 +2,16 @@
 Extraction endpoints.
 
 PROMPT 5: POST /extract/baseline  (deterministic, no API key)
-PROMPT 6: POST /extract/llm       (LLM-powered, requires API key) — stub only here
+PROMPT 6: POST /extract/llm       (LLM-powered via Claude, Pydantic-gated output)
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.schemas.models import ExtractionRequest, ExtractionResponse
 from app.services.baseline_extractor import extract_all_baseline
+from app.services.llm_client import LLMClientBase, extract_all_llm, get_llm_client
 
 router = APIRouter(prefix="/extract", tags=["extraction"])
 
@@ -23,7 +24,7 @@ async def extract_baseline(request: ExtractionRequest) -> ExtractionResponse:
     No API key required. Uses keyword matching against the rubric competencies.
     Intentionally imperfect — exists to establish a lower bound for evaluation.
 
-    Use POST /extract/llm (PROMPT 6) for LLM-powered extraction.
+    Use POST /extract/llm for LLM-powered extraction.
 
     Input:
       - rubric: the role's RoleRubric (load from GET /rubrics/sample or upload your own)
@@ -49,14 +50,33 @@ async def extract_baseline(request: ExtractionRequest) -> ExtractionResponse:
 
 
 @router.post("/llm", response_model=ExtractionResponse)
-async def extract_llm(request: ExtractionRequest) -> ExtractionResponse:
+async def extract_llm(
+    request: ExtractionRequest,
+    client: LLMClientBase = Depends(get_llm_client),
+) -> ExtractionResponse:
     """
-    LLM-powered extraction endpoint — stub for PROMPT 6.
+    LLM-powered extraction using Claude claude-opus-4-8.
 
-    Will use Claude structured-JSON extraction with Pydantic validation gating.
-    Returns 501 until PROMPT 6 is implemented.
+    Requires ANTHROPIC_API_KEY in environment, or LLM_MOCK_MODE=true for testing.
+
+    Every signal returned has been validated through Pydantic schemas. Evidence
+    spans carry verbatim quoted text and exact character offsets into the source
+    debrief — the EvidenceVerifier (PROMPT 7) will re-confirm these.
+
+    Returns 503 if no API key is configured and mock mode is off.
+    Returns 502 if the Anthropic API is unreachable.
+    Returns 422 if Claude's output fails Pydantic schema validation (not silently accepted).
     """
-    raise HTTPException(
-        status_code=501,
-        detail="LLM extraction not yet implemented. Use POST /extract/baseline for now.",
+    if not request.debriefs:
+        raise HTTPException(status_code=400, detail="At least one debrief is required.")
+    if not request.rubric.competencies:
+        raise HTTPException(status_code=400, detail="Rubric must have at least one competency.")
+
+    signals, warnings = extract_all_llm(request.debriefs, request.rubric, client)
+
+    return ExtractionResponse(
+        signals=signals,
+        total_signals=len(signals),
+        extractor_used=client.extractor_version,
+        warnings=warnings,
     )

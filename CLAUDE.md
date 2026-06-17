@@ -110,7 +110,7 @@ Read this before every coding session.
 - [ ] PROMPT 3: Sample data
 - [x] PROMPT 4: FastAPI skeleton
 - [x] PROMPT 5: Deterministic baseline extractor
-- [ ] PROMPT 6: LLM extraction interface
+- [x] PROMPT 6: LLM extraction interface
 - [ ] PROMPT 7: Evidence verification
 - [ ] PROMPT 8: Coverage map
 - [ ] PROMPT 9: Disagreement detection

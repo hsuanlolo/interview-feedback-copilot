@@ -205,4 +205,53 @@ Key things to inspect in the response:
 3. **Rubric vocabulary mismatch.** If interviewers use "quantitative thinking" instead of "statistical reasoning," the baseline will miss the signal. The LLM extractor handles paraphrasing; the baseline does not.  
 4. **Span cap.** We cap at 4 evidence spans per signal. For very long, rich debriefs, relevant sentences beyond the first 4 are silently dropped. This is a deliberate simplification — the claim should be supported by the first 4 matches; more is noise for the reviewer.
 
+---
+
+## Milestone 6: LLM Extraction Interface
+
+**What changed:**  
+Added `backend/app/services/llm_client.py` with three classes (`LLMClientBase`, `MockLLMClient`, `AnthropicLLMClient`) and supporting helpers (`_locate_quotes`, `_draft_to_signal`, `extract_all_llm`). Replaced the 501 stub in `POST /extract/llm` with a real implementation using FastAPI dependency injection. Added 38 new tests in `backend/app/tests/test_llm_extractor.py`. Total test count: 122.
+
+**Why designed this way:**  
+**The offset problem — Python computes positions, not Claude.** Asking Claude to produce character offsets (`start_char=42, end_char=89`) would be unreliable — LLMs can't count characters accurately. Instead, we ask Claude to produce verbatim quoted text, then `_locate_quotes()` uses Python's `str.find()` to compute exact offsets. This means every `EvidenceSpan` produced by the LLM extractor has the same accuracy guarantee as the baseline extractor, even though the mechanism is completely different.
+
+**Pydantic validation gates all LLM output** (the non-negotiable rule in practice). The flow is:  
+1. Claude responds via `tool_use` → raw dict → `LLMExtractionOutput.model_validate()` → `ValidationError` if invalid  
+2. Each quote searched in `raw_text` → missing quotes produce warnings, never spans  
+3. `ExtractedSignal(...)` construction → another Pydantic validation pass  
+At no step is invalid data silently accepted. `AnthropicLLMClient._call_api()` raises `HTTPException(422)` on validation failure so the caller sees a structured error.
+
+**`get_llm_client()` as a FastAPI Depends** lets tests inject `MockLLMClient()` via `app.dependency_overrides` without touching production code or env vars. The test for "503 when no API key" deliberately does NOT use the override, confirming the factory raises the right error in the default test environment.
+
+**Engineering concept to understand:**  
+**Dependency injection in FastAPI.** When `Depends(get_llm_client)` appears in a route signature, FastAPI resolves it before calling the handler. In tests, `app.dependency_overrides[get_llm_client] = lambda: MockLLMClient()` swaps out the real factory for the mock. This is the same pattern used to swap databases, auth, email providers, and any other external dependency in tests — no monkeypatching, no global state mutation, no `if TEST_MODE:` branches in production code.
+
+**Tool-use for structured output.** The `tool_choice={"type": "tool", "name": "extract_competency_signals"}` parameter forces Claude to call that specific tool, guaranteeing a structured JSON response. Without `tool_choice`, Claude might respond in prose and the JSON parsing would fail. Forced tool calling is the reliable path to structured LLM output.
+
+**How to test it manually:**  
+```bash
+cd backend
+uvicorn app.main:app --reload
+
+# With a real API key:
+export ANTHROPIC_API_KEY="your-key-here"
+
+# Then POST to /extract/llm with sample data (use /docs Swagger UI)
+# GET /rubrics/sample to get the rubric, GET /debriefs/sample for debriefs,
+# then POST /extract/llm
+
+# Without an API key — enable mock mode:
+LLM_MOCK_MODE=true uvicorn app.main:app --reload
+# /extract/llm now returns mock-v1 signals
+
+# Run tests (all use mock mode via dependency_overrides — no API key needed):
+python -m pytest app/tests/test_llm_extractor.py -v
+```
+
+**What could fail in production:**  
+1. **Claude changes its tool_use response format.** If Anthropic updates the API response structure, `tool_blocks[0].input` might change shape. Pin the `anthropic` SDK version in `pyproject.toml` and test upgrades in CI.  
+2. **Quote inexact match.** If Claude slightly misquotes (adds a trailing space, changes punctuation), `str.find()` returns -1 and the span is flagged as hallucinated. In practice, Claude with the verbatim-quote instruction is very accurate. A fuzzy match fallback (e.g., `difflib.SequenceMatcher`) could recover mild misquotes but risks accepting paraphrases — not implemented here.  
+3. **Long debriefs approach token limits.** A 10,000-word debrief plus the rubric plus the system prompt can exceed `max_tokens=4096` for the output. Consider chunking very long debriefs by competency or adding input size validation in the endpoint.  
+4. **Cost.** At current claude-opus-4-8 pricing, 5 rich debriefs = ~10,000 tokens input + ~2,000 tokens output ≈ $0.10–0.15 per extraction run. Fine for demo; budget for production throughput.
+
 <!-- Future milestones will be appended below -->

@@ -493,7 +493,8 @@ class TestExtractBaselineEndpoint:
         response = client.post("/extract/baseline", json=body)
         assert response.status_code == 400
 
-    def test_llm_endpoint_returns_501_stub(self, sample_rubric, sample_debrief_text):
+    def test_llm_endpoint_returns_503_without_api_key(self, sample_rubric, sample_debrief_text):
+        # PROMPT 6 implemented /extract/llm. Without an API key it returns 503, not 501.
         body = self._build_request_body(sample_rubric, sample_debrief_text)
         response = client.post("/extract/llm", json=body)
-        assert response.status_code == 501
+        assert response.status_code == 503
