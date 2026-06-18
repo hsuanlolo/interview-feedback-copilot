@@ -208,3 +208,7 @@ All enforced in code, not just documentation:
 ## Status
 
 All 18 milestones complete. Built incrementally with an AI pair-programmer following the rules in `CLAUDE.md`.
+
+## Authorship / Build Process
+
+This project was designed, scoped, and reviewed by Hsuan “Jimmy” Lo as a portfolio prototype. I used Claude Code as an AI coding assistant for implementation support, debugging, refactoring, and documentation drafts. The core product framing, workflow design, evaluation logic, human-in-the-loop safeguards, and hiring-process analysis are my own.
