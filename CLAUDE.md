@@ -112,11 +112,11 @@ Read this before every coding session.
 - [x] PROMPT 5: Deterministic baseline extractor
 - [x] PROMPT 6: LLM extraction interface
 - [x] PROMPT 7: Evidence verification
-- [ ] PROMPT 8: Coverage map
-- [ ] PROMPT 9: Disagreement detection
-- [ ] PROMPT 10: Synthesis report generation
-- [ ] PROMPT 11: Frontend MVP
-- [ ] PROMPT 12: Reviewer edit/approval workflow
+- [x] PROMPT 8: Coverage map
+- [x] PROMPT 9: Disagreement detection
+- [x] PROMPT 10: Synthesis report generation
+- [x] PROMPT 11: Frontend MVP
+- [x] PROMPT 12: Reviewer edit/approval workflow
 - [ ] PROMPT 13: Evaluation suite
 - [ ] PROMPT 14: Privacy/security safeguards
 - [ ] PROMPT 15: Database persistence

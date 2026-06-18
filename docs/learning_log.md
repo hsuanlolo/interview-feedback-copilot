@@ -300,4 +300,174 @@ python -m pytest app/tests/test_evidence_verifier.py -v
 2. **Debrief mutation.** If the stored debrief text differs from the text that was used during extraction (e.g., whitespace normalization on ingest), all spans will fail verification even if they were correct at extraction time. Store the text exactly as it was submitted.
 3. **Large signal sets.** With 5 debriefs × 7 competencies × 3 extractors, the signal set can be large. The verifier is O(signals × spans) and very fast per span (just string operations), but watch for memory pressure if all signals are passed in one request. PROMPT 15's database persistence will help by keeping only relevant signals in memory.
 
+---
+
+## Milestone 8: Coverage Map Analyzer
+
+**What changed:**  
+Added `backend/app/services/coverage_analyzer.py` (`analyze_coverage`), `backend/app/routers/analyze.py` (`POST /analyze/coverage`), and `CoverageRequest`/`CoverageMapResponse` schemas. Added 17 tests in `backend/app/tests/test_coverage_analyzer.py`. Total test count: 165.
+
+**Why designed this way:**  
+**Four-state coverage model.** Rather than a binary "assessed/not assessed," coverage has four states — `STRONG` (≥2 interviewers, consistent direction), `PARTIAL` (only 1 interviewer), `CONFLICTED` (≥2 interviewers with opposing signals), and `NOT_COVERED` (no interviewer mentioned it). This communicates confidence, not just presence. A single interviewer saying a candidate is strong at SQL is very different from three interviewers independently agreeing.
+
+**Separation of gap types.** `PARTIAL` and `NOT_COVERED` both appear as `coverage_gaps`. This lets the hiring committee know which competencies need follow-up questions (PARTIAL — one opinion is insufficient) vs. which were simply never discussed (NOT_COVERED — a panel process failure).
+
+**Coverage is per-rubric, not just per-signal.** The analyzer iterates over every competency in the rubric, including ones with zero signals. This ensures no competency silently disappears from the report because no interviewer mentioned it.
+
+**Engineering concept to understand:**  
+**Aggregation with known categories.** A common LLM pipeline mistake is to summarize only what signals exist, silently omitting things that weren't mentioned. Here, the rubric defines the expected categories, and the coverage map is computed against that complete list — not just the signals that were extracted. This is the difference between "what was said" and "what should have been said."
+
+**How to test it manually:**
+```bash
+cd backend
+uvicorn app.main:app --reload
+
+# POST /analyze/coverage with signals=[] and the sample rubric
+# Expected: all competency_assessments have status=not_covered, overall_coverage_pct=0.0
+
+# Run tests
+python -m pytest app/tests/test_coverage_analyzer.py -v
+```
+
+**What could fail in production:**  
+1. **Rubric drift.** If the rubric used at extraction time differs from the rubric used at coverage analysis time (e.g., a competency was renamed), signals will be assigned to competency IDs that don't exist in the rubric. They won't appear in the coverage map. Always use the same rubric object throughout a pipeline run.  
+2. **Single-interviewer halo effect.** A single very positive interviewer will produce `PARTIAL` coverage across many competencies — which looks better than `NOT_COVERED` but still isn't sufficient. The UI must communicate that PARTIAL is a yellow flag, not a green one.
+
+---
+
+## Milestone 9: Disagreement Detector
+
+**What changed:**  
+Added `backend/app/services/disagreement_detector.py` (`detect_disagreements`), `POST /analyze/disagreements`, and `DisagreementsRequest`/`DisagreementsResponse` schemas. Added 13 tests in `backend/app/tests/test_disagreement_detector.py`. Total test count: 178.
+
+**Why designed this way:**  
+**Two distinct disagreement types.** `DIRECTION_CONFLICT` catches the most dangerous case: one interviewer says "strong" and another says "weak" on the same competency. `EVIDENCE_ABSENT` catches a subtler problem: a confident claim with no verifiable evidence span — the extractor assigned high confidence, but there's nothing to cite. Both are `HIGH` severity and must be surfaced before synthesis.
+
+**Sorted by severity, not by occurrence.** The flags list is sorted `HIGH → MEDIUM → LOW`, not in the order signals were extracted. This ensures the reviewer sees the most critical issues first, regardless of which competency was processed last.
+
+**Resolution suggestions are template-based, not LLM-generated.** The suggestion text ("Ask the hiring committee to discuss...") is written in code, not produced by an LLM. This ensures suggestions are consistent, auditable, and safe — they don't introduce new claims or analysis.
+
+**Engineering concept to understand:**  
+**Detecting inconsistency in structured data.** Disagreement detection is a classic data quality problem: for each group key (competency_id), check whether all members of the group agree. In a database you'd use `GROUP BY + HAVING COUNT(DISTINCT signal_type) > 1`. Here it's Python dict-based grouping. The pattern is identical. When LLM output is stored as structured records, SQL-style analytics become possible — this is one of the main benefits of schema-first design.
+
+**How to test it manually:**
+```bash
+cd backend
+python -m pytest app/tests/test_disagreement_detector.py -v
+
+# Manual test: post two signals for the same competency,
+# one POSITIVE (from Alice) and one NEGATIVE (from Bob).
+# POST /analyze/disagreements — expect one DIRECTION_CONFLICT flag.
+```
+
+**What could fail in production:**  
+1. **Many-interviewer averaging.** With 5 interviewers, 3 positive and 2 negative signals is a conflict but also a majority. The current implementation flags `DIRECTION_CONFLICT` whenever both POSITIVE and NEGATIVE appear, regardless of proportion. A production version might weight by confidence or add a "weak conflict" state for 3v1 cases.  
+2. **Same interviewer, multiple signals.** If one interviewer produces both POSITIVE and NEGATIVE signals for the same competency (contradicting themselves), this is not currently detected. A `SELF_CONFLICT` type could be added.
+
+---
+
+## Milestone 10: Synthesis Report Generation
+
+**What changed:**  
+Added `backend/app/services/synthesizer.py` (`synthesize`, `_generate_executive_summary`), `backend/app/routers/synthesize.py` (`POST /synthesize` → 201), and `SynthesisRequest`/`SynthesisReport` schemas. Added 11 tests in `backend/app/tests/test_synthesizer.py`. Total test count: 189.
+
+**Why designed this way:**  
+**Verification is the first step of synthesis, not a prerequisite to call separately.** The synthesizer calls `verifier.verify()` internally and raises `HTTPException(422)` if `is_valid=False`. This means synthesis cannot be called with unverified signals — the hard gate is enforced at the code boundary, not by convention or documentation.
+
+**Executive summary is template-based, not LLM-generated.** This is a deliberate, non-obvious choice. A template-based summary cannot introduce new claims, cannot hallucinate evidence, and cannot produce recommendation language. The summary describes what the data shows (coverage rate, signal counts, flag counts) without interpreting it. The hiring committee does the interpretation.
+
+**No hire/no-hire fields in the schema.** `SynthesisReport` has no `recommendation`, `hire_decision`, `should_hire`, or equivalent field. This constraint is enforced at the schema level, not by convention. Adding such a field would require a schema change, which would be visible in code review.
+
+**Engineering concept to understand:**  
+**Orchestration as code.** The synthesizer calls four sub-operations in sequence: verify → coverage → disagreements → build_report. Each sub-operation is independently tested. The synthesizer test verifies that they're called correctly and that the result is assembled properly. This is the "orchestrator" pattern: one component owns the sequence, each step owns its logic. This is how production LLM pipelines are structured when reliability matters more than speed.
+
+**How to test it manually:**
+```bash
+cd backend
+python -m pytest app/tests/test_synthesizer.py -v
+
+# Manual: POST /synthesize with valid signals (from baseline extractor + verifier).
+# The response will have a report_id. Then GET /review/{report_id} to confirm it's stored.
+```
+
+**What could fail in production:**  
+1. **Synthesis blocks on any invalid span.** A single hallucinated quote (text_not_found) stops the entire report. This is intentional but strict — if even one signal is bad, the whole pipeline needs re-extraction. Future improvement: allow synthesis to proceed with the invalid signals excluded, if the exclusion rate is below a threshold.  
+2. **Empty executive summary for minimal data.** If signals=[] and debriefs=1, the template produces a valid but nearly empty summary. Add a minimum-signal warning to the report.
+
+---
+
+## Milestone 11: Frontend MVP
+
+**What changed:**  
+Built the complete Next.js 14 App Router frontend. Key files:
+- `frontend/lib/api.ts` — typed API client for all backend endpoints
+- `frontend/lib/types.ts` — TypeScript types mirroring all backend Pydantic schemas
+- `frontend/app/page.tsx` — home page explaining the tool, pipeline, and design constraints
+- `frontend/app/analyze/page.tsx` — 6-step analysis wizard (client component with React state)
+- `frontend/app/reports/[id]/page.tsx` — report viewer (server component, fetches by report_id)
+- `frontend/components/Navbar.tsx`, `SignalCard.tsx`, `CompetencyGrid.tsx`, `DisagreementList.tsx`, `SynthesisReportViewer.tsx`
+
+**Why designed this way:**  
+**Single wizard page with step-local state.** Rather than separate URLs for each pipeline step (which would require URL-based state management or a backend session), the wizard holds all intermediate results in React `useState`. The user can go back and re-run any step. This keeps routing simple (one page) without sacrificing the step-by-step UX.
+
+**Server vs. client components.** The home page and report viewer are server components (no `'use client'`): they render on the server, have no interactivity, and benefit from server-side data fetching for the report page. The analyze wizard is a client component because it has user interactions and holds mutable state. This is the correct Next.js 14 App Router division: server for read/display, client for interactivity.
+
+**`@/` path alias for imports.** `tsconfig.json` maps `@/*` to `./`, so `import { Navbar } from '@/components/Navbar'` works from any file in the project without `../../` path counting. Next.js resolves this at build time.
+
+**Engineering concept to understand:**  
+**Type-safe API clients.** `frontend/lib/api.ts` uses the TypeScript types from `frontend/lib/types.ts` for every request and response. If the backend changes a field name or type, the TypeScript compiler catches the mismatch at build time. This is a weaker version of schema-sharing (the types are manually kept in sync) — a stronger version would auto-generate TypeScript types from the FastAPI OpenAPI spec using `openapi-typescript` or similar.
+
+**How to test it manually:**
+```bash
+# Terminal 1: start backend
+cd backend && uvicorn app.main:app --reload
+
+# Terminal 2: start frontend
+cd frontend && npm run dev
+
+# Open http://localhost:3000
+# 1. Click "New Analysis"
+# 2. Enter a candidate name, click "Load Sample Data"
+# 3. Step through extraction → verification → analysis → synthesis → review
+```
+
+**What could fail in production:**  
+1. **CORS.** The frontend calls `http://localhost:8000` in dev. In production, set `NEXT_PUBLIC_API_URL` to the backend's deployed URL and configure `CORS_ORIGINS` on the backend.  
+2. **State loss on refresh.** Closing or refreshing the analyze page during a wizard run discards all intermediate results. For production, persist intermediate state to localStorage or to the backend.  
+3. **No loading skeleton.** API calls show a spinner but no content placeholder. For slow connections (LLM calls can take 5–10s), add skeleton loaders.
+
+---
+
+## Milestone 12: Reviewer Edit/Approval Workflow
+
+**What changed:**  
+Added `ReviewUpdate` schema, `backend/app/routers/review.py` (`GET /review/{report_id}`, `PATCH /review/{report_id}`), and `store.update_report_review()`. Added 8 review-workflow tests to `backend/app/tests/test_synthesizer.py`. Total test count: 197. The review step in the frontend wizard (`Step 6`) calls these endpoints.
+
+**Why designed this way:**  
+**PATCH, not PUT.** `PATCH` allows partial updates — the reviewer can save notes without setting `reviewer_approved`, or approve without adding notes. `PUT` would require sending the complete report object on every edit, including all the synthesized data. PATCH is correct here because we're updating reviewer metadata only, not the full resource.
+
+**`reviewed_at` set only on approval.** Saving notes without checking "I approve" does not set `reviewed_at`. This ensures the timestamp reflects actual human sign-off, not a draft note-taking session. A report with `reviewer_approved=False` should not be shared externally even if it has `final_reviewer_notes`.
+
+**Human review is a required step by design.** The `SynthesisReport` schema always includes `reviewer_approved: bool = False` and `reviewer_name: str = ""`. A report straight from `/synthesize` is always in "pending review" state. The frontend enforces this by making Step 6 the only way to get a report out of the system. There is no "skip review" button.
+
+**Engineering concept to understand:**  
+**Idempotent PATCH operations.** Calling `PATCH /review/{id}` twice with the same body produces the same result both times. This is idempotency: the operation is safe to retry if the network fails after the server processes it but before the client receives the 200. The test `test_patch_is_idempotent` verifies this. Most write operations should be designed for idempotency when building systems that retry on failure.
+
+**How to test it manually:**
+```bash
+cd backend
+python -m pytest app/tests/test_synthesizer.py -v
+
+# End-to-end:
+# 1. POST /synthesize → get report_id
+# 2. GET /review/{report_id} → confirm reviewer_approved=false
+# 3. PATCH /review/{report_id} with reviewer_name + reviewer_approved=true
+# 4. GET /review/{report_id} → confirm reviewed_at is set
+```
+
+**What could fail in production:**  
+1. **No auth on PATCH.** Any caller can approve any report. In production, tie the review endpoint to an authenticated user identity and record who approved.  
+2. **Double approval.** Calling PATCH with `reviewer_approved=True` twice silently succeeds — the second call overwrites `reviewed_at`. Consider rejecting re-approval or logging each approval event separately.  
+3. **Reviewer notes lost on re-synthesis.** If someone re-runs `/synthesize` for the same candidate, a new `report_id` is generated. The old report's reviewer notes are on the old ID. The new report starts in "pending review" state. Link reports to a project/candidate record to avoid this confusion.
+
 <!-- Future milestones will be appended below -->

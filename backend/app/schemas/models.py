@@ -364,6 +364,41 @@ class VerificationRequest(BaseModel):
     debriefs: list[InterviewDebrief]
 
 
+class CoverageRequest(BaseModel):
+    signals: list[ExtractedSignal]
+    rubric: RoleRubric
+    debriefs: list[InterviewDebrief] = Field(default_factory=list)
+
+
+class DisagreementsRequest(BaseModel):
+    signals: list[ExtractedSignal]
+    rubric: RoleRubric
+    debriefs: list[InterviewDebrief] = Field(default_factory=list)
+
+
+class DisagreementsResponse(BaseModel):
+    flags: list[DisagreementFlag]
+    total_flags: int
+    high_severity_count: int
+    medium_severity_count: int
+
+
+class SynthesisRequest(BaseModel):
+    candidate_name: str
+    candidate_id: str = Field(default_factory=lambda: str(uuid4()))
+    role_title: str
+    role_id: str = Field(default_factory=lambda: str(uuid4()))
+    signals: list[ExtractedSignal]
+    rubric: RoleRubric
+    debriefs: list[InterviewDebrief]
+
+
+class ReviewUpdate(BaseModel):
+    final_reviewer_notes: str = ""
+    reviewer_approved: bool = False
+    reviewer_name: str = Field("", min_length=0)
+
+
 class ExtractionRequest(BaseModel):
     debriefs: list[InterviewDebrief]
     rubric: RoleRubric

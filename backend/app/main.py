@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import debriefs, extract, projects, rubrics, verify
+from app.routers import analyze, debriefs, extract, projects, review, rubrics, synthesize, verify
 
 app = FastAPI(
     title=settings.app_title,
@@ -29,6 +29,9 @@ app.include_router(debriefs.router)
 app.include_router(projects.router)
 app.include_router(extract.router)
 app.include_router(verify.router)
+app.include_router(analyze.router)
+app.include_router(synthesize.router)
+app.include_router(review.router)
 
 
 # ── System endpoints ─────────────────────────────────────────────────────────

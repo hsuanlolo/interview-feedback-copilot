@@ -93,6 +93,26 @@ class InMemoryStore:
             return None
         return self._reports.get(project["report_id"])
 
+    def update_report_review(
+        self,
+        report_id: str,
+        reviewer_name: str,
+        reviewer_approved: bool,
+        final_reviewer_notes: str,
+    ) -> Optional[SynthesisReport]:
+        """Apply reviewer edits to a stored report. Returns None if not found."""
+        from datetime import datetime as _dt
+
+        report = self._reports.get(report_id)
+        if report is None:
+            return None
+        report.reviewer_name = reviewer_name
+        report.reviewer_approved = reviewer_approved
+        report.final_reviewer_notes = final_reviewer_notes
+        if reviewer_approved:
+            report.reviewed_at = _dt.utcnow()
+        return report
+
     # ── Dev helpers ──────────────────────────────────────────────────────────
 
     def reset(self) -> None:
