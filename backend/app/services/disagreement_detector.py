@@ -54,10 +54,28 @@ def _collect_spans(signals: List[ExtractedSignal], max_per_signal: int = 1) -> L
     return spans[:6]  # Cap total to keep flags readable
 
 
+def _net_direction(sigs: List[ExtractedSignal]) -> Optional[SignalType]:
+    """Return the net direction for a set of signals from one interviewer.
+
+    An interviewer who says both positive and negative things about a competency
+    is nuanced, not a conflict party — return None so they are excluded from the
+    direction-conflict calculation.
+    """
+    pos = sum(1 for s in sigs if s.signal_type in {SignalType.POSITIVE, SignalType.MIXED})
+    neg = sum(1 for s in sigs if s.signal_type in {SignalType.NEGATIVE, SignalType.MIXED})
+    if pos > neg:
+        return SignalType.POSITIVE
+    if neg > pos:
+        return SignalType.NEGATIVE
+    return None  # tied → mixed view, not a conflict contributor
+
+
 def _detect_direction_conflict(
     competency: Competency,
     debrief_groups: Dict[str, List[ExtractedSignal]],
     debrief_map: Dict[str, str],
+    min_minority_voters: int = 1,
+    min_minority_ratio: float = 0.30,
 ) -> Optional[DisagreementFlag]:
     positive_names: List[str] = []
     negative_names: List[str] = []
@@ -65,24 +83,39 @@ def _detect_direction_conflict(
 
     for debrief_id, sigs in debrief_groups.items():
         name = _interviewer_name_from_signal(sigs[0], debrief_map)
-        types = {s.signal_type for s in sigs}
-        has_pos = bool(types & {SignalType.POSITIVE, SignalType.MIXED})
-        has_neg = bool(types & {SignalType.NEGATIVE, SignalType.MIXED})
-
-        if has_pos:
+        net = _net_direction(sigs)
+        # Interviewers with tied/mixed signals are excluded — they add nuance, not conflict.
+        if net == SignalType.POSITIVE:
             positive_names.append(name)
-        if has_neg:
+        elif net == SignalType.NEGATIVE:
             negative_names.append(name)
         all_signals.extend(sigs)
 
     if not (positive_names and negative_names):
         return None
 
+    # Only flag when the minority side is a meaningful fraction of clear-direction voters.
+    # 1-vs-3 (25%) is a lone outlier; 1-vs-1 (50%) or 2-vs-3 (40%) is a genuine split.
+    minority_voters = min(len(positive_names), len(negative_names))
+    total_voters = len(positive_names) + len(negative_names)
+    minority_ratio = minority_voters / total_voters if total_voters > 0 else 0.0
+
+    if minority_voters < min_minority_voters or minority_ratio < min_minority_ratio:
+        return None
+
+    # HIGH = nearly even split, requires committee discussion.
+    # MEDIUM = notable but skewed — worth mentioning, not blocking.
+    severity = (
+        DisagreementSeverity.HIGH
+        if minority_ratio >= 0.45
+        else DisagreementSeverity.MEDIUM
+    )
+
     return DisagreementFlag(
         competency_id=competency.competency_id,
         competency_name=competency.name,
         disagreement_type=DisagreementType.DIRECTION_CONFLICT,
-        severity=DisagreementSeverity.HIGH,
+        severity=severity,
         description=(
             f"Interviewers disagree on {competency.name}. "
             f"{_join_names(positive_names)} assessed positively; "

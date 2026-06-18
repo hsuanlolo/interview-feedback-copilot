@@ -109,6 +109,7 @@ class TestDisagreementDetector:
     def test_direction_conflict_detected(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric()
+        # 1 net-positive voter vs 1 net-negative voter → ratio=0.50 ≥ 0.35 → fires
         signals = [
             make_signal(d1, "stat", SignalType.POSITIVE),
             make_signal(d2, "stat", SignalType.NEGATIVE),
@@ -122,7 +123,10 @@ class TestDisagreementDetector:
     def test_direction_conflict_names_both_interviewers(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.NEGATIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.NEGATIVE),
+        ]
         flags = detect_disagreements(signals, rubric, [d1, d2])
         flag = flags[0]
         assert "Alice" in flag.interviewer_names
@@ -156,6 +160,7 @@ class TestDisagreementDetector:
     def test_flags_sorted_high_first(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric([make_competency("Stat", "stat"), make_competency("SQL", "sql")])
+        # 1 net-positive voter vs 1 net-negative voter per competency → both HIGH
         signals = [
             make_signal(d1, "stat", SignalType.POSITIVE),
             make_signal(d2, "stat", SignalType.NEGATIVE),
@@ -163,6 +168,7 @@ class TestDisagreementDetector:
             make_signal(d2, "sql", SignalType.NEGATIVE),
         ]
         flags = detect_disagreements(signals, rubric, [d1, d2])
+        assert len(flags) >= 2
         severities = [f.severity for f in flags]
         high_positions = [i for i, s in enumerate(severities) if s == DisagreementSeverity.HIGH]
         low_positions = [i for i, s in enumerate(severities) if s == DisagreementSeverity.LOW]
@@ -172,10 +178,108 @@ class TestDisagreementDetector:
     def test_resolution_suggestion_nonempty(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.NEGATIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.NEGATIVE),
+        ]
         flags = detect_disagreements(signals, rubric, [d1, d2])
+        assert len(flags) >= 1
         for flag in flags:
             assert flag.resolution_suggestion != ""
+
+    def test_single_minority_voter_not_flagged(self):
+        """1 dissenting voter out of 4 clear voters = 25% minority, below the 35% threshold."""
+        d1, d2, d3, d4 = (
+            make_debrief("Alice"), make_debrief("Bob"),
+            make_debrief("Carol"), make_debrief("Dave"),
+        )
+        rubric = make_rubric()
+        # 3 net-positive voters vs 1 net-negative voter → ratio=0.25 < 0.35 → no conflict
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+            make_signal(d3, "stat", SignalType.POSITIVE),
+            make_signal(d4, "stat", SignalType.NEGATIVE),
+        ]
+        flags = detect_disagreements(signals, rubric, [d1, d2, d3, d4])
+        direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
+        assert direction == []
+
+    def test_mixed_interviewer_excluded_from_conflict(self):
+        """A tied interviewer is excluded; remaining 3-vs-1 split (25%) is below the 30% threshold."""
+        d1, d2, d3, d4, d5 = (
+            make_debrief("Alice"), make_debrief("Bob"),
+            make_debrief("Carol"), make_debrief("Dave"), make_debrief("Eve"),
+        )
+        rubric = make_rubric()
+        # Alice: 1 pos + 1 neg → net=tied → excluded
+        # Bob, Carol, Eve: net positive (3 pos voters)
+        # Dave: net negative (1 neg voter)
+        # After exclusion: 3 pos + 1 neg → ratio=0.25 < 0.30 → no conflict
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d1, "stat", SignalType.NEGATIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+            make_signal(d3, "stat", SignalType.POSITIVE),
+            make_signal(d4, "stat", SignalType.NEGATIVE),
+            make_signal(d5, "stat", SignalType.POSITIVE),
+        ]
+        flags = detect_disagreements(signals, rubric, [d1, d2, d3, d4, d5])
+        direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
+        assert direction == []
+
+    def test_low_ratio_not_flagged(self):
+        """5 positive voters vs 1 negative voter = ratio 17%, clearly below the 30% threshold."""
+        d1, d2, d3, d4, d5, d6 = (
+            make_debrief("Alice"), make_debrief("Bob"), make_debrief("Carol"),
+            make_debrief("Dave"), make_debrief("Eve"), make_debrief("Frank"),
+        )
+        rubric = make_rubric()
+        # 5 net-positive voters vs 1 net-negative voter → ratio=0.17 < 0.30 → no conflict
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+            make_signal(d3, "stat", SignalType.POSITIVE),
+            make_signal(d4, "stat", SignalType.POSITIVE),
+            make_signal(d5, "stat", SignalType.POSITIVE),
+            make_signal(d6, "stat", SignalType.NEGATIVE),
+        ]
+        flags = detect_disagreements(signals, rubric, [d1, d2, d3, d4, d5, d6])
+        direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
+        assert direction == []
+
+    def test_medium_severity_for_skewed_split(self):
+        """3 positive voters vs 2 negative voters = ratio 40%, between 35% and 45% → MEDIUM."""
+        d1, d2, d3, d4, d5 = (
+            make_debrief("Alice"), make_debrief("Bob"), make_debrief("Carol"),
+            make_debrief("Dave"), make_debrief("Eve"),
+        )
+        rubric = make_rubric()
+        # 3 net-positive vs 2 net-negative → ratio=0.40, fires (≥0.35) but not HIGH (<0.45)
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+            make_signal(d3, "stat", SignalType.POSITIVE),
+            make_signal(d4, "stat", SignalType.NEGATIVE),
+            make_signal(d5, "stat", SignalType.NEGATIVE),
+        ]
+        flags = detect_disagreements(signals, rubric, [d1, d2, d3, d4, d5])
+        direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
+        assert len(direction) == 1
+        assert direction[0].severity == DisagreementSeverity.MEDIUM
+
+    def test_high_severity_for_even_split(self):
+        """1 vs 1 voters → ratio=0.50 ≥ 0.45 → HIGH severity."""
+        d1, d2 = make_debrief("Alice"), make_debrief("Bob")
+        rubric = make_rubric()
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.NEGATIVE),
+        ]
+        flags = detect_disagreements(signals, rubric, [d1, d2])
+        direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
+        assert len(direction) == 1
+        assert direction[0].severity == DisagreementSeverity.HIGH
 
     def test_unknown_competency_id_skipped(self):
         debrief = make_debrief("Alice")
