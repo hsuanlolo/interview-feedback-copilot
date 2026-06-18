@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Backend API URL — override via NEXT_PUBLIC_API_URL env var in production
+  // Produces a self-contained server bundle for Docker (node server.js)
+  output: 'standalone',
 };
 
 export default nextConfig;

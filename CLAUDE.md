@@ -117,9 +117,9 @@ Read this before every coding session.
 - [x] PROMPT 10: Synthesis report generation
 - [x] PROMPT 11: Frontend MVP
 - [x] PROMPT 12: Reviewer edit/approval workflow
-- [ ] PROMPT 13: Evaluation suite
-- [ ] PROMPT 14: Privacy/security safeguards
-- [ ] PROMPT 15: Database persistence
-- [ ] PROMPT 16: Docker
-- [ ] PROMPT 17: Developer quality workflow
-- [ ] PROMPT 18: Portfolio documentation
+- [x] PROMPT 13: Evaluation suite
+- [x] PROMPT 14: Privacy/security safeguards
+- [x] PROMPT 15: Database persistence
+- [x] PROMPT 16: Docker
+- [x] PROMPT 17: Developer quality workflow
+- [x] PROMPT 18: Portfolio documentation

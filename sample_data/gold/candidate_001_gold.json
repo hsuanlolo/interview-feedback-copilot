@@ -1,0 +1,145 @@
+{
+  "gold_id": "gold-c001-v1",
+  "candidate_id": "C-001",
+  "candidate_name": "Jordan Lee",
+  "role_title": "Data Scientist / Quantitative Researcher",
+  "rubric_id": "rubric-ds-001",
+  "debrief_files": [
+    "candidate_001_interviewer_1.txt",
+    "candidate_001_interviewer_2.txt",
+    "candidate_001_interviewer_3.txt",
+    "candidate_001_interviewer_4.txt",
+    "candidate_001_interviewer_5.txt"
+  ],
+  "notes": "Gold labels hand-crafted from synthetic sample data. See eval_plan.md for metric definitions.",
+
+  "strengths": [
+    {
+      "id": "s-01",
+      "competency_id": "stat_reasoning",
+      "description": "Correctly computed sample size for A/B test with power calculation, and flagged weekly seasonality without prompting",
+      "source_interviewer": "Priya Sharma",
+      "verbatim_phrase": "correctly computed the required sample size"
+    },
+    {
+      "id": "s-02",
+      "competency_id": "causal_inference",
+      "description": "Identified selection bias from VIP-user pre-launch contamination and explained why the cohort cannot be used for ATE estimation",
+      "source_interviewer": "Priya Sharma",
+      "verbatim_phrase": "identified that this creates a selection bias"
+    },
+    {
+      "id": "s-03",
+      "competency_id": "causal_inference",
+      "description": "Identified three independent threats to validity in an observational dataset without prompting: self-selection, post-treatment contamination, and unstable historical controls",
+      "source_interviewer": "Thomas Becker",
+      "verbatim_phrase": "identified three threats to validity without any prompting"
+    },
+    {
+      "id": "s-04",
+      "competency_id": "coding_ability",
+      "description": "Completed pandas cohort exercise correctly, used vectorized operations, handled date-boundary edge case without prompting",
+      "source_interviewer": "Marcus Webb",
+      "verbatim_phrase": "completed the pandas exercise correctly"
+    }
+  ],
+
+  "concerns": [
+    {
+      "id": "c-01",
+      "competency_id": "product_judgment",
+      "severity": "high",
+      "description": "Does not connect technical work to business decisions; returned repeatedly to methodology when asked about stakeholder impact",
+      "source_interviewer": "Sonya Park",
+      "verbatim_phrase": "Jordan immediately went to a technical diagnostic",
+      "must_not_be_omitted": true
+    },
+    {
+      "id": "c-02",
+      "competency_id": "product_judgment",
+      "severity": "high",
+      "description": "Led with methodology instead of answer when asked what to present to VP of Product; required explicit coaching to correct",
+      "source_interviewer": "Sonya Park",
+      "verbatim_phrase": "Jordan led with \"I would first describe the methodology I used\"",
+      "must_not_be_omitted": true
+    },
+    {
+      "id": "c-03",
+      "competency_id": "product_judgment",
+      "severity": "medium",
+      "description": "No self-correction when initial assumption (mobile platform) proved wrong; moved to next analysis without reflecting on why assumption failed",
+      "source_interviewer": "Sonya Park",
+      "verbatim_phrase": "Jordan's reaction was to say \"OK, let me re-run the analysis for desktop\"",
+      "must_not_be_omitted": true
+    },
+    {
+      "id": "c-04",
+      "competency_id": "coding_ability",
+      "severity": "medium",
+      "description": "Significant SQL gap: logical error in window function PARTITION BY, required two hints to resolve a moderately complex retention query",
+      "source_interviewer": "Marcus Webb",
+      "verbatim_phrase": "applied PARTITION BY on the wrong column",
+      "must_not_be_omitted": false
+    },
+    {
+      "id": "c-05",
+      "competency_id": "ambiguity_handling",
+      "severity": "medium",
+      "description": "Did not surface unstated assumption about date definition in retention metric; assumed without stating",
+      "source_interviewer": "Marcus Webb",
+      "verbatim_phrase": "Jordan did not ask about this at all",
+      "must_not_be_omitted": false
+    },
+    {
+      "id": "c-06",
+      "competency_id": "collaboration",
+      "severity": "low",
+      "description": "Cross-functional perspective is shallow; could not articulate how a PM experienced a past disagreement",
+      "source_interviewer": "Dana Osei",
+      "verbatim_phrase": "I had to prompt \"how do you think the PM experienced that conversation\"",
+      "must_not_be_omitted": false
+    }
+  ],
+
+  "disagreements": [
+    {
+      "id": "d-01",
+      "competency_id": "product_judgment",
+      "type": "direction_conflict",
+      "description": "Priya's interview did not surface any product judgment concerns; Sonya's interview gave a 2/5 specifically for product judgment gap",
+      "interviewer_a": "Priya Sharma",
+      "signal_a": "positive",
+      "interviewer_b": "Sonya Park",
+      "signal_b": "negative"
+    },
+    {
+      "id": "d-02",
+      "competency_id": "communication",
+      "type": "direction_conflict",
+      "description": "Priya rated communication as good; Sonya specifically flagged weak stakeholder framing as a communication problem",
+      "interviewer_a": "Priya Sharma",
+      "signal_a": "positive",
+      "interviewer_b": "Sonya Park",
+      "signal_b": "negative"
+    }
+  ],
+
+  "coverage_gaps": [
+    {
+      "id": "g-01",
+      "competency_id": "product_judgment",
+      "description": "Priya explicitly noted product judgment was not assessed in the technical screen due to time; only Sonya assessed it",
+      "assessed_by": ["Sonya Park"],
+      "expected_assessors": 2,
+      "status": "partial"
+    },
+    {
+      "id": "g-02",
+      "competency_id": "stat_reasoning",
+      "description": "Marcus did not formally test statistical reasoning in the coding round due to time",
+      "assessed_by": ["Priya Sharma", "Thomas Becker"],
+      "expected_assessors": 3,
+      "status": "partial"
+    }
+  ]
+}

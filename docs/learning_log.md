@@ -470,4 +470,164 @@ python -m pytest app/tests/test_synthesizer.py -v
 2. **Double approval.** Calling PATCH with `reviewer_approved=True` twice silently succeeds — the second call overwrites `reviewed_at`. Consider rejecting re-approval or logging each approval event separately.  
 3. **Reviewer notes lost on re-synthesis.** If someone re-runs `/synthesize` for the same candidate, a new `report_id` is generated. The old report's reviewer notes are on the old ID. The new report starts in "pending review" state. Link reports to a project/candidate record to avoid this confusion.
 
+---
+
+## Milestone 13: Evaluation Suite
+
+**What changed:**  
+Created `sample_data/gold/candidate_001_gold.json` (hand-labeled strengths, concerns, disagreements, coverage gaps for the synthetic candidate) and `backend/app/evals/run_eval.py` (six-metric eval runner). Added 7 tests in `backend/app/tests/test_eval_suite.py`. Total test count: 218. All six release gates pass.
+
+**Why designed this way:**  
+**Eval-before-deploy is a hard rule from the product brief.** A prior summarization pilot failed because it missed red flags. The eval suite measures exactly that: `omission_rate` checks that critical labeled concerns appear in the extracted signals. If the extractor gets worse, this metric fails CI.
+
+**Metrics are tiered by consequence.** Citation validity (must be 100%) and omission rate (must be ≤10%) are the release gates — these prevent the two failure modes that motivated the project. Disagreement recall and coverage completeness are secondary: they matter but a small miss doesn't block a demo. This prioritization is explicit in the results table.
+
+**Gold labels are synthetic but realistic.** The five debrief files have intentional variation: a 2/5 product judgment score, a SQL weakness, an explicit interviewer note that they didn't cover a competency. The gold labels encode what a careful human reader would flag. This is "evaluation-first data design" in practice.
+
+**Engineering concept to understand:**  
+**Release gates in CI.** The eval runner exits with code 1 if any metric fails. The CI job (`ci.yml`) runs the eval suite on every push. This means a code change that degrades extraction quality will fail CI before merging. The eval runner is not just a diagnostic tool — it's a guard rail.
+
+**How to test it manually:**
+```bash
+cd backend
+python -m app.evals.run_eval
+# Expected: ALL PASS — meets release gates
+
+python -m pytest app/tests/test_eval_suite.py -v
+```
+
+**What could fail in production:**  
+1. **Gold labels age out.** If the extractor improves and starts catching signals the gold didn't anticipate, coverage completeness might show lower (false negatives in the gold). Re-label periodically.  
+2. **Word-overlap faithfulness proxy is weak.** A more accurate faithfulness check would use an NLI model or an LLM judge. The proxy is good enough to catch catastrophic hallucinations; it won't catch subtle unfaithful paraphrases.
+
+---
+
+## Milestone 14: Privacy and Security Safeguards
+
+**What changed:**  
+Added `backend/app/security.py` with: `SecurityHeadersMiddleware` (X-Content-Type-Options, X-Frame-Options, Cache-Control: no-store), `scrub_pii_for_log()` (strips emails, phones, SSNs before logging), `validate_debrief_text()` (size limits), and `warn_if_no_api_key()` (startup warning). Wired `SecurityHeadersMiddleware` into `main.py`. Added 14 tests. Total test count: 232.
+
+**Why designed this way:**  
+**PII scrubbing is for logs only — never applied to stored text.** Applying scrubbing to debrief text before storage would corrupt character offsets, breaking the evidence verification system. The scrubber is called explicitly in logging paths. This distinction must be preserved if logging is later added to extraction or synthesis.
+
+**Security headers have no performance cost.** Adding them in middleware means every response gets them automatically, including future endpoints. The `Cache-Control: no-store` header prevents sensitive report data from being cached in browser or proxy caches, which is important because reports contain real candidate information.
+
+**Engineering concept to understand:**  
+**Defense in depth for LLM applications.** LLM apps have unique security considerations: the model might be prompted to leak input data, candidates' raw debrief text is sensitive PII, and outputs might be cached where they shouldn't be. Standard API security (HTTPS, CORS, input validation) must be combined with LLM-specific concerns (prompt injection is possible if debrief text reaches the model, output logging must be PII-safe).
+
+**How to test it manually:**
+```bash
+python -m pytest app/tests/test_security.py -v
+
+# Check headers on a live server:
+curl -I http://localhost:8000/health
+# Look for: X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Cache-Control: no-store
+```
+
+**What could fail in production:**  
+1. **PII in structured fields.** The scrubber checks `claim` and `quoted_text` but not `interviewer_name` or `candidate_name`. These fields can contain real names. If logging includes full signal dicts, extend the scrubber to cover them.  
+2. **No rate limiting.** A client can call `/synthesize` in a tight loop, sending expensive LLM requests. Add rate limiting per IP or per API key before production exposure.
+
+---
+
+## Milestone 15: Database Persistence
+
+**What changed:**  
+Added `backend/app/models/db_models.py` (SQLAlchemy 1.4 ORM models: `ProjectRow`, `DebriefRow`, `ReportRow`), `backend/app/database.py` (engine, `SessionLocal`, `init_db`, `db_session` context manager), `backend/app/services/db_store.py` (`DatabaseStore` implementing the same interface as `InMemoryStore`), and Alembic migrations. Called `init_db()` at startup in `main.py`. Added 14 tests for `DatabaseStore`. Total test count: 232.
+
+**Why designed this way:**  
+**Same interface, swappable backends.** `DatabaseStore` and `InMemoryStore` both have `create_project`, `get_report`, `update_report_review`, etc. Tests continue to use `InMemoryStore` via `app.dependency_overrides` — they're fast, isolated, and don't touch disk. The production server uses `DatabaseStore` initialized at startup. This is the **repository pattern**: the API layer doesn't know or care which store is active.
+
+**Reports stored as JSON blobs.** Rather than decomposing `SynthesisReport` (15+ nested fields) into dozens of normalized tables, the full Pydantic model is serialized to `TEXT`. This keeps the migration simple, lets the schema evolve without database changes for non-key fields, and makes reads fast (one query, no JOINs). The tradeoff: you can't write SQL queries over report content. For a portfolio project and early production, this is acceptable.
+
+**`flush()` before reading within a session.** SQLAlchemy 1.4 expires objects after `commit()`. All attribute access happens inside the session context (before `db_session()` exits) to avoid `DetachedInstanceError`.
+
+**Engineering concept to understand:**  
+**Database migrations as code.** Alembic generates a migration file (in `alembic/versions/`) that records the exact SQL to create or alter tables. Running `alembic upgrade head` applies all pending migrations in order. This means the database schema is version-controlled alongside the application code — a new developer can reproduce the exact schema by running one command. Never manually `ALTER TABLE` in a production database.
+
+**How to test it manually:**
+```bash
+cd backend
+make migrate        # alembic upgrade head
+python -m pytest app/tests/test_db_store.py -v
+```
+
+**What could fail in production:**  
+1. **SQLite write contention.** SQLite allows only one writer at a time. For concurrent requests, use PostgreSQL. Just change `DATABASE_URL` to `postgresql://...` — the SQLAlchemy code is dialect-agnostic.  
+2. **Report JSON migration.** If `SynthesisReport` gains a required field in a future schema version, existing stored JSON won't have it. Add `Field(default=...)` to all new fields and handle the `ValidationError` on deserialization.  
+3. **No connection pooling.** The current `create_engine` uses the default pool. Under load, configure `pool_size` and `max_overflow` for PostgreSQL.
+
+---
+
+## Milestone 16: Docker
+
+**What changed:**  
+Added `backend/Dockerfile` (Python 3.11 slim, non-root user, `uvicorn` CMD), `frontend/Dockerfile` (multi-stage: deps → builder → runner, `next/standalone` output), updated `docker-compose.yml` (healthcheck on backend, `depends_on` with `service_healthy`, named volume for SQLite). Added `output: 'standalone'` to `next.config.mjs`.
+
+**Why designed this way:**  
+**Multi-stage frontend build.** The `builder` stage installs all dev dependencies and compiles Next.js. The `runner` stage copies only the compiled output (`.next/standalone`, `.next/static`, `public`). The final image has no `node_modules`, no TypeScript sources, no dev tooling — it's ~3x smaller than a single-stage build.
+
+**Non-root users in both containers.** Running as root inside a container is a security risk: if the container is compromised, the attacker has root on the host's filesystem mounts. Both Dockerfiles create a dedicated low-privilege user.
+
+**Backend healthcheck enables ordered startup.** The frontend's `depends_on: service_healthy` means Docker waits for the backend to respond at `/health` before starting the frontend container. Without this, the frontend might start before the backend is ready and show connection errors.
+
+**Engineering concept to understand:**  
+**Docker layer caching.** `COPY pyproject.toml .` followed by `RUN pip install ...` is the first layer. This layer is only rebuilt when `pyproject.toml` changes — not when application code changes. Application code (`COPY . .`) comes after. This means a code change doesn't reinstall all Python packages; it only rebuilds the last layer. Order Dockerfile instructions from least-changing to most-changing.
+
+**How to test it manually:**
+```bash
+docker compose up --build
+
+# In another terminal:
+curl http://localhost:8000/health
+# Open http://localhost:3000
+```
+
+**What could fail in production:**  
+1. **SQLite in a volume.** The `db_data` volume persists the SQLite file across restarts, but volume backups require manual `docker cp` or a separate backup container. Use a managed database (RDS, Supabase) in production.  
+2. **`NEXT_PUBLIC_API_URL` is baked in at build time.** If the backend URL changes after the frontend image is built, rebuild the frontend image. For dynamic URLs, use a runtime proxy (nginx) instead.
+
+---
+
+## Milestone 17: Developer Quality Workflow
+
+**What changed:**  
+Added `Makefile` (12 targets: `dev-backend`, `dev-frontend`, `test`, `lint`, `typecheck`, `eval`, `migrate`, `docker-up`, `docker-down`, `clean`), `.github/workflows/ci.yml` (two jobs: backend tests+lint+eval, frontend typecheck+build). The `.env.example` was already present from Milestone 4.
+
+**Why designed this way:**  
+**Makefile as the single entry point.** A new contributor runs `make test` without knowing the project's Python package manager, virtual environment path, or pytest flags. The Makefile encodes the correct invocations so they don't have to. This is especially useful in projects with both a Python backend and a Node.js frontend — otherwise each contributor remembers different commands.
+
+**CI runs the eval suite, not just tests.** Many projects separate "tests" (fast, in-memory, no IO) from "evals" (slower, touches disk, measures quality metrics). Running the eval suite in CI means a regression in extraction quality fails the build before merging, not after deployment. The 7 eval tests run in under a second because they use the fast baseline extractor.
+
+**Engineering concept to understand:**  
+**CI as a collaboration protocol.** CI is not just about catching bugs — it's a shared contract between contributors. When the CI pipeline is well-defined, a developer can merge with confidence that the test suite, linter, type checker, and eval suite all passed. Without CI, "it works on my machine" is the best guarantee. With CI, every merge is validated against the same environment.
+
+**How to test it manually:**
+```bash
+make test       # should show 232 passed
+make lint       # should show no issues
+make typecheck  # should show no errors
+make eval       # should show ALL PASS
+```
+
+**What could fail in production:**  
+1. **Ruff version skew.** If the CI pinned version differs from the dev machine version, linting rules may differ. Pin ruff in `pyproject.toml` and update explicitly.  
+2. **CI does not test Docker.** The CI pipeline runs tests natively, not inside Docker. If the Dockerfile has a bug, it won't be caught until `docker compose up`. Add a `docker build` step to CI to catch this early.
+
+---
+
+## Milestone 18: Portfolio Documentation
+
+**What changed:**  
+Rewrote `README.md` with: skills table linking features to implementations, architecture diagram with key decision notes, full test count breakdown by layer, non-negotiable constraints documented with enforcement mechanisms, and quick-start instructions for both local and Docker modes.
+
+**Why designed this way:**  
+**README as a technical portfolio artifact.** A hiring manager or technical interviewer will read the README before cloning the repo. The skills table connects each engineering decision to a real implementation detail (e.g., "Python computes offsets, not Claude") so the reader can see the reasoning without reading source files. The constraints table shows that product guardrails are enforced in code, not just stated in documentation.
+
+**Engineering concept to understand:**  
+**Documentation as design accountability.** Writing down the non-negotiable constraints in the README creates a public commitment. If a future change weakens the citation verification gate or adds a hire recommendation field, the README becomes false. This tension is useful — it makes regressions visible. The best documentation is not a description of the system, but a description of the invariants the system must maintain.
+
+**What could fail in production:**  
+Documentation that doesn't match code erodes trust faster than no documentation. Treat the README as a living document and update it when the architecture changes, not after.
+
 <!-- Future milestones will be appended below -->

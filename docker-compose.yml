@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -7,30 +5,33 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./sample_data:/sample_data:ro
-    env_file:
-      - .env
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:////app/data/interview_copilot.db
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-false}
+      - DATABASE_URL=sqlite:///./interview_copilot.db
+      - CORS_ORIGINS=["http://localhost:3000"]
+    volumes:
+      # Persist the SQLite database across container restarts
+      - db_data:/app
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-    command: npm run dev
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
 
-# Note: Dockerfiles will be created in PROMPT 16.
-# For now, use local development with uvicorn + next dev.
+volumes:
+  db_data:

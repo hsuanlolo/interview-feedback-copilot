@@ -4,7 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.database import init_db
 from app.routers import analyze, debriefs, extract, projects, review, rubrics, synthesize, verify
+from app.security import SecurityHeadersMiddleware, warn_if_no_api_key
+
+warn_if_no_api_key()
+init_db()  # create SQLite tables on startup if they don't exist
 
 app = FastAPI(
     title=settings.app_title,
@@ -14,6 +19,9 @@ app = FastAPI(
         "Surfaces evidence. Human decides."
     ),
 )
+
+# Security headers on every response
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
