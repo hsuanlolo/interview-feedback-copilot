@@ -9,7 +9,6 @@ when the server runs normally.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import uuid4
 
 from app.database import db_session
@@ -24,7 +23,8 @@ from app.schemas.models import (
 # Helpers — all extraction happens inside the session
 # ---------------------------------------------------------------------------
 
-def _row_to_project_dict(row: ProjectRow) -> Dict:
+
+def _row_to_project_dict(row: ProjectRow) -> dict:
     """Build a plain dict from a ProjectRow while still inside a session."""
     return {
         "project_id": row.project_id,
@@ -56,6 +56,7 @@ def _row_to_debrief(row: DebriefRow) -> InterviewDebrief:
 # DatabaseStore
 # ---------------------------------------------------------------------------
 
+
 class DatabaseStore:
     """Persistent store using SQLite. Same interface as InMemoryStore."""
 
@@ -75,12 +76,12 @@ class DatabaseStore:
             db.flush()  # write to DB so we can read it back
             return _row_to_project_dict(row)
 
-    def get_project(self, project_id: str) -> Optional[dict]:
+    def get_project(self, project_id: str) -> dict | None:
         with db_session() as db:
             row = db.query(ProjectRow).filter_by(project_id=project_id).first()
             return _row_to_project_dict(row) if row else None
 
-    def list_projects(self) -> List[dict]:
+    def list_projects(self) -> list[dict]:
         with db_session() as db:
             rows = db.query(ProjectRow).order_by(ProjectRow.created_at).all()
             return [_row_to_project_dict(r) for r in rows]
@@ -105,7 +106,7 @@ class DatabaseStore:
             project.debrief_count = (project.debrief_count or 0) + 1
             return True
 
-    def get_debriefs_for_project(self, project_id: str) -> List[InterviewDebrief]:
+    def get_debriefs_for_project(self, project_id: str) -> list[InterviewDebrief]:
         with db_session() as db:
             rows = db.query(DebriefRow).filter_by(project_id=project_id).all()
             return [_row_to_debrief(r) for r in rows]
@@ -133,14 +134,14 @@ class DatabaseStore:
                 project.report_id = report.report_id
                 project.has_synthesis = True
 
-    def get_report(self, report_id: str) -> Optional[SynthesisReport]:
+    def get_report(self, report_id: str) -> SynthesisReport | None:
         with db_session() as db:
             row = db.query(ReportRow).filter_by(report_id=report_id).first()
             if row is None:
                 return None
             return SynthesisReport.model_validate_json(row.report_json)
 
-    def get_report_for_project(self, project_id: str) -> Optional[SynthesisReport]:
+    def get_report_for_project(self, project_id: str) -> SynthesisReport | None:
         with db_session() as db:
             project = db.query(ProjectRow).filter_by(project_id=project_id).first()
             if project is None or not project.report_id:
@@ -154,7 +155,7 @@ class DatabaseStore:
         reviewer_name: str,
         reviewer_approved: bool,
         final_reviewer_notes: str,
-    ) -> Optional[SynthesisReport]:
+    ) -> SynthesisReport | None:
         with db_session() as db:
             row = db.query(ReportRow).filter_by(report_id=report_id).first()
             if row is None:

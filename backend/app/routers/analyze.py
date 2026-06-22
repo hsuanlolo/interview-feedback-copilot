@@ -12,9 +12,9 @@ from fastapi import APIRouter, HTTPException
 from app.schemas.models import (
     CoverageMapResponse,
     CoverageRequest,
+    DisagreementSeverity,
     DisagreementsRequest,
     DisagreementsResponse,
-    DisagreementSeverity,
 )
 from app.services.coverage_analyzer import analyze_coverage
 from app.services.disagreement_detector import detect_disagreements
@@ -68,10 +68,6 @@ async def disagreements(request: DisagreementsRequest) -> DisagreementsResponse:
     return DisagreementsResponse(
         flags=flags,
         total_flags=len(flags),
-        high_severity_count=sum(
-            1 for f in flags if f.severity == DisagreementSeverity.HIGH
-        ),
-        medium_severity_count=sum(
-            1 for f in flags if f.severity == DisagreementSeverity.MEDIUM
-        ),
+        high_severity_count=sum(1 for f in flags if f.severity == DisagreementSeverity.HIGH),
+        medium_severity_count=sum(1 for f in flags if f.severity == DisagreementSeverity.MEDIUM),
     )

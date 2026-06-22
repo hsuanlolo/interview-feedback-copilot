@@ -13,8 +13,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
-from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,8 +20,6 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.schemas.models import (
     Competency,
-    EvidenceSpan,
-    ExtractedSignal,
     InterviewDebrief,
     RoleRubric,
     SignalType,
@@ -32,8 +28,6 @@ from app.services.baseline_extractor import (
     EXTRACTOR_VERSION,
     _classify_signal,
     _extract_body,
-    _is_vague,
-    _sentence_matches_competency,
     _split_into_sentences,
     extract_all_baseline,
     extract_signals_baseline,
@@ -68,8 +62,8 @@ def make_debrief(text: str, interviewer: str = "Alice") -> InterviewDebrief:
 def make_competency(
     name: str = "Statistical Reasoning",
     cid: str = "stat_reasoning",
-    pos: List[str] | None = None,
-    neg: List[str] | None = None,
+    pos: list[str] | None = None,
+    neg: list[str] | None = None,
 ) -> Competency:
     return Competency(
         competency_id=cid,
@@ -80,7 +74,7 @@ def make_competency(
     )
 
 
-def make_rubric(competencies: List[Competency] | None = None) -> RoleRubric:
+def make_rubric(competencies: list[Competency] | None = None) -> RoleRubric:
     return RoleRubric(
         role_title="Data Scientist",
         competencies=competencies or [make_competency()],
@@ -338,14 +332,17 @@ class TestExtractSignalsBaseline:
 
     def test_multiple_competencies_can_match(self):
         """A rich debrief can produce signals for multiple competencies."""
-        rubric = make_rubric([
-            make_competency("Statistical Reasoning", "stat"),
-            make_competency(
-                "Communication", "comm",
-                pos=["led with conclusions", "clear and tailored"],
-                neg=["jumped to detail"],
-            ),
-        ])
+        rubric = make_rubric(
+            [
+                make_competency("Statistical Reasoning", "stat"),
+                make_competency(
+                    "Communication",
+                    "comm",
+                    pos=["led with conclusions", "clear and tailored"],
+                    neg=["jumped to detail"],
+                ),
+            ]
+        )
         debrief = make_debrief(MIXED_DEBRIEF)
         signals = extract_signals_baseline(debrief, rubric)
         competency_ids = {s.competency_id for s in signals}
@@ -445,9 +442,7 @@ class TestExtractBaselineEndpoint:
         body = self._build_request_body(sample_rubric, sample_debrief_text)
         data = client.post("/extract/baseline", json=body).json()
         for signal in data["signals"]:
-            assert len(signal["evidence_spans"]) >= 1, (
-                f"Signal {signal['signal_id']} has no evidence spans"
-            )
+            assert len(signal["evidence_spans"]) >= 1, f"Signal {signal['signal_id']} has no evidence spans"
 
     def test_span_offsets_are_valid(self, sample_rubric, sample_debrief_text):
         """Verify that every returned span's quoted_text appears in the source debrief."""
@@ -473,20 +468,20 @@ class TestExtractBaselineEndpoint:
 
         debriefs = []
         for i, path in enumerate(debrief_texts):
-            debriefs.append({
-                "candidate_id": "C-001",
-                "interviewer_name": f"Interviewer {i + 1}",
-                "raw_text": path.read_text(),
-            })
+            debriefs.append(
+                {
+                    "candidate_id": "C-001",
+                    "interviewer_name": f"Interviewer {i + 1}",
+                    "raw_text": path.read_text(),
+                }
+            )
 
         body = {"rubric": sample_rubric, "debriefs": debriefs}
         response = client.post("/extract/baseline", json=body)
         assert response.status_code == 200
 
         data = response.json()
-        assert data["total_signals"] >= 5, (
-            f"Expected ≥5 signals from 5 debriefs, got {data['total_signals']}"
-        )
+        assert data["total_signals"] >= 5, f"Expected ≥5 signals from 5 debriefs, got {data['total_signals']}"
 
     def test_empty_debriefs_list_returns_400(self, sample_rubric):
         body = {"rubric": sample_rubric, "debriefs": []}

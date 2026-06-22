@@ -11,7 +11,7 @@ Covers:
 from __future__ import annotations
 
 import re
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import HTTPException, Request
 from fastapi.responses import Response
@@ -19,10 +19,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
 
-
 # ---------------------------------------------------------------------------
 # Security Headers Middleware
 # ---------------------------------------------------------------------------
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Adds security headers to every response."""
@@ -73,8 +73,7 @@ def validate_debrief_text(text: str, field_name: str = "raw_text") -> str:
         raise HTTPException(
             status_code=422,
             detail=(
-                f"{field_name} exceeds maximum length "
-                f"({MAX_DEBRIEF_CHARS:,} chars). Truncate or split the debrief."
+                f"{field_name} exceeds maximum length ({MAX_DEBRIEF_CHARS:,} chars). Truncate or split the debrief."
             ),
         )
     return text
@@ -104,7 +103,7 @@ def scrub_pii_for_log(text: str) -> str:
     return text
 
 
-def scrub_signal_for_log(signal_dict: Dict[str, Any]) -> Dict[str, Any]:
+def scrub_signal_for_log(signal_dict: dict[str, Any]) -> dict[str, Any]:
     """
     Return a log-safe version of a signal dict with PII scrubbed from
     quoted_text and claim fields. Does NOT modify the original.
@@ -114,8 +113,7 @@ def scrub_signal_for_log(signal_dict: Dict[str, Any]) -> Dict[str, Any]:
         safe["claim"] = scrub_pii_for_log(safe["claim"])
     if "evidence_spans" in safe and isinstance(safe["evidence_spans"], list):
         safe["evidence_spans"] = [
-            {**span, "quoted_text": scrub_pii_for_log(span.get("quoted_text", ""))}
-            if isinstance(span, dict) else span
+            {**span, "quoted_text": scrub_pii_for_log(span.get("quoted_text", ""))} if isinstance(span, dict) else span
             for span in safe["evidence_spans"]
         ]
     return safe
@@ -125,6 +123,7 @@ def scrub_signal_for_log(signal_dict: Dict[str, Any]) -> Dict[str, Any]:
 # API key validation at startup
 # ---------------------------------------------------------------------------
 
+
 def warn_if_no_api_key() -> None:
     """
     Print a startup warning if the server is running in LLM mode without an API key.
@@ -132,6 +131,7 @@ def warn_if_no_api_key() -> None:
     """
     if not settings.anthropic_api_key and not settings.llm_mock_mode and not settings.baseline_mode:
         import warnings
+
         warnings.warn(
             "ANTHROPIC_API_KEY is not set. "
             "The /extract/llm endpoint will return 503 until an API key is provided. "

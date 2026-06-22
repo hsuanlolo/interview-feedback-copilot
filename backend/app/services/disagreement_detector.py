@@ -21,7 +21,6 @@ Not yet implemented (no numeric scores in v1)
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
 
 from app.schemas.models import (
     Competency,
@@ -38,7 +37,7 @@ from app.schemas.models import (
 
 def _interviewer_name_from_signal(
     signal: ExtractedSignal,
-    debrief_map: Dict[str, str],
+    debrief_map: dict[str, str],
 ) -> str:
     if signal.debrief_id in debrief_map:
         return debrief_map[signal.debrief_id]
@@ -47,14 +46,14 @@ def _interviewer_name_from_signal(
     return f"Interviewer-{signal.debrief_id[:6]}"
 
 
-def _collect_spans(signals: List[ExtractedSignal], max_per_signal: int = 1) -> List[EvidenceSpan]:
-    spans: List[EvidenceSpan] = []
+def _collect_spans(signals: list[ExtractedSignal], max_per_signal: int = 1) -> list[EvidenceSpan]:
+    spans: list[EvidenceSpan] = []
     for sig in signals:
         spans.extend(sig.evidence_spans[:max_per_signal])
     return spans[:6]  # Cap total to keep flags readable
 
 
-def _net_direction(sigs: List[ExtractedSignal]) -> Optional[SignalType]:
+def _net_direction(sigs: list[ExtractedSignal]) -> SignalType | None:
     """Return the net direction for a set of signals from one interviewer.
 
     An interviewer who says both positive and negative things about a competency
@@ -72,14 +71,14 @@ def _net_direction(sigs: List[ExtractedSignal]) -> Optional[SignalType]:
 
 def _detect_direction_conflict(
     competency: Competency,
-    debrief_groups: Dict[str, List[ExtractedSignal]],
-    debrief_map: Dict[str, str],
+    debrief_groups: dict[str, list[ExtractedSignal]],
+    debrief_map: dict[str, str],
     min_minority_voters: int = 1,
     min_minority_ratio: float = 0.30,
-) -> Optional[DisagreementFlag]:
-    positive_names: List[str] = []
-    negative_names: List[str] = []
-    all_signals: List[ExtractedSignal] = []
+) -> DisagreementFlag | None:
+    positive_names: list[str] = []
+    negative_names: list[str] = []
+    all_signals: list[ExtractedSignal] = []
 
     for debrief_id, sigs in debrief_groups.items():
         name = _interviewer_name_from_signal(sigs[0], debrief_map)
@@ -105,11 +104,7 @@ def _detect_direction_conflict(
 
     # HIGH = nearly even split, requires committee discussion.
     # MEDIUM = notable but skewed — worth mentioning, not blocking.
-    severity = (
-        DisagreementSeverity.HIGH
-        if minority_ratio >= 0.45
-        else DisagreementSeverity.MEDIUM
-    )
+    severity = DisagreementSeverity.HIGH if minority_ratio >= 0.45 else DisagreementSeverity.MEDIUM
 
     return DisagreementFlag(
         competency_id=competency.competency_id,
@@ -133,16 +128,13 @@ def _detect_direction_conflict(
 
 def _detect_evidence_absent(
     competency: Competency,
-    debrief_groups: Dict[str, List[ExtractedSignal]],
-    debrief_map: Dict[str, str],
-) -> List[DisagreementFlag]:
+    debrief_groups: dict[str, list[ExtractedSignal]],
+    debrief_map: dict[str, str],
+) -> list[DisagreementFlag]:
     """Flag signals that make strong claims but have no verifiable evidence."""
-    flags: List[DisagreementFlag] = []
+    flags: list[DisagreementFlag] = []
     for debrief_id, sigs in debrief_groups.items():
-        unsupported_high_conf = [
-            s for s in sigs
-            if s.is_unsupported and s.confidence >= 0.70
-        ]
+        unsupported_high_conf = [s for s in sigs if s.is_unsupported and s.confidence >= 0.70]
         if not unsupported_high_conf:
             continue
         name = _interviewer_name_from_signal(sigs[0], debrief_map)
@@ -169,7 +161,7 @@ def _detect_evidence_absent(
     return flags
 
 
-def _join_names(names: List[str]) -> str:
+def _join_names(names: list[str]) -> str:
     if not names:
         return "no interviewer"
     if len(names) == 1:
@@ -178,31 +170,29 @@ def _join_names(names: List[str]) -> str:
 
 
 def detect_disagreements(
-    signals: List[ExtractedSignal],
+    signals: list[ExtractedSignal],
     rubric: RoleRubric,
-    debriefs: Optional[List[InterviewDebrief]] = None,
-) -> List[DisagreementFlag]:
+    debriefs: list[InterviewDebrief] | None = None,
+) -> list[DisagreementFlag]:
     """
     Detect conflicts between interviewers across all competencies.
 
     Returns a list of DisagreementFlag objects sorted by severity (HIGH first).
     """
-    debrief_map: Dict[str, str] = {}
+    debrief_map: dict[str, str] = {}
     if debriefs:
         for d in debriefs:
             debrief_map[d.debrief_id] = d.interviewer_name
 
     # comp_id → debrief_id → [signals]
-    grouped: Dict[str, Dict[str, List[ExtractedSignal]]] = defaultdict(
-        lambda: defaultdict(list)
-    )
+    grouped: dict[str, dict[str, list[ExtractedSignal]]] = defaultdict(lambda: defaultdict(list))
     for signal in signals:
         grouped[signal.competency_id][signal.debrief_id].append(signal)
 
     # Build competency lookup
-    comp_map: Dict[str, Competency] = {c.competency_id: c for c in rubric.competencies}
+    comp_map: dict[str, Competency] = {c.competency_id: c for c in rubric.competencies}
 
-    all_flags: List[DisagreementFlag] = []
+    all_flags: list[DisagreementFlag] = []
 
     for comp_id, debrief_groups in grouped.items():
         competency = comp_map.get(comp_id)
@@ -216,9 +206,7 @@ def detect_disagreements(
                 all_flags.append(conflict)
 
         # Evidence-absent check works per-debrief regardless of count
-        all_flags.extend(
-            _detect_evidence_absent(competency, debrief_groups, debrief_map)
-        )
+        all_flags.extend(_detect_evidence_absent(competency, debrief_groups, debrief_map))
 
     # Sort: HIGH first, then MEDIUM, then LOW
     severity_order = {

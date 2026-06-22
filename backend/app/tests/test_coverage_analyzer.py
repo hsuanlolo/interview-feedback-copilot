@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
 from uuid import uuid4
 
 import pytest
@@ -37,6 +36,7 @@ def reset():
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def make_debrief(interviewer: str = "Alice") -> InterviewDebrief:
     return InterviewDebrief(
         candidate_id="C-001",
@@ -55,7 +55,7 @@ def make_competency(name: str = "Statistical Reasoning", cid: str = "stat") -> C
     )
 
 
-def make_rubric(competencies: List[Competency] | None = None) -> RoleRubric:
+def make_rubric(competencies: list[Competency] | None = None) -> RoleRubric:
     return RoleRubric(
         role_title="Data Scientist",
         competencies=competencies or [make_competency()],
@@ -96,6 +96,7 @@ def make_signal(
 # ---------------------------------------------------------------------------
 # Unit tests for analyze_coverage
 # ---------------------------------------------------------------------------
+
 
 class TestCoverageAnalyzer:
     def test_not_covered_when_no_signals(self):
@@ -148,14 +149,20 @@ class TestCoverageAnalyzer:
     def test_no_gap_for_strong(self):
         d1, d2 = make_debrief("A"), make_debrief("B")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.POSITIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+        ]
         result = analyze_coverage(signals, rubric, [d1, d2])
         assert result.coverage_gaps == []
 
     def test_overall_coverage_pct_all_covered(self):
         d1, d2 = make_debrief("A"), make_debrief("B")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.POSITIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+        ]
         result = analyze_coverage(signals, rubric, [d1, d2])
         assert result.overall_coverage_pct == 100.0
 
@@ -166,10 +173,12 @@ class TestCoverageAnalyzer:
 
     def test_multiple_competencies(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
-        rubric = make_rubric([
-            make_competency("Stat", "stat"),
-            make_competency("SQL", "sql"),
-        ])
+        rubric = make_rubric(
+            [
+                make_competency("Stat", "stat"),
+                make_competency("SQL", "sql"),
+            ]
+        )
         signals = [
             make_signal(d1, "stat", SignalType.POSITIVE),
             make_signal(d2, "stat", SignalType.POSITIVE),
@@ -205,7 +214,10 @@ class TestCoverageAnalyzer:
     def test_interviewers_list_populated(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.POSITIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+        ]
         result = analyze_coverage(signals, rubric, [d1, d2])
         assert "Alice" in result.interviewers
         assert "Bob" in result.interviewers
@@ -214,6 +226,7 @@ class TestCoverageAnalyzer:
 # ---------------------------------------------------------------------------
 # HTTP endpoint
 # ---------------------------------------------------------------------------
+
 
 class TestCoverageEndpoint:
     @pytest.fixture
@@ -234,8 +247,9 @@ class TestCoverageEndpoint:
     def test_coverage_gaps_count_matches_not_covered(self, sample_rubric):
         body = {"signals": [], "rubric": sample_rubric}
         data = client.post("/analyze/coverage", json=body).json()
-        not_covered = sum(1 for ca in data["competency_assessments"]
-                         if ca["coverage_status"] in ("not_covered", "partial"))
+        not_covered = sum(
+            1 for ca in data["competency_assessments"] if ca["coverage_status"] in ("not_covered", "partial")
+        )
         assert data["overall_coverage_pct"] == 0.0
         assert len(data["coverage_gaps"]) == not_covered
 

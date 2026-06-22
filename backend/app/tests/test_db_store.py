@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import os
-import tempfile
-
 import pytest
 
 from app.schemas.models import InterviewDebrief, ProjectCreate, SynthesisReport
@@ -17,9 +14,10 @@ def db_store(tmp_path):
     db_url = f"sqlite:///{db_path}"
 
     # Patch the engine in database.py to use the temp DB
-    import app.database as database_module
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
+
+    import app.database as database_module
     from app.models.db_models import Base
 
     test_engine = create_engine(db_url, connect_args={"check_same_thread": False})
@@ -32,6 +30,7 @@ def db_store(tmp_path):
     database_module.SessionLocal = TestSession
 
     from app.services.db_store import DatabaseStore
+
     store = DatabaseStore()
     yield store
 
@@ -90,7 +89,6 @@ class TestDatabaseStoreProjects:
 class TestDatabaseStoreReports:
     @pytest.fixture
     def minimal_report(self):
-        from uuid import uuid4
         return SynthesisReport(
             candidate_id="C-001",
             candidate_name="Jordan Lee",

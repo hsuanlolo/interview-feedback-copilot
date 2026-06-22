@@ -11,13 +11,11 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from datetime import datetime
-from typing import Dict, List, Optional
 from uuid import uuid4
 
 from app.schemas.models import (
     InterviewDebrief,
     ProjectCreate,
-    ProjectSummary,
     SynthesisReport,
 )
 
@@ -31,11 +29,11 @@ class InMemoryStore:
 
     def __init__(self) -> None:
         # project_id → project dict
-        self._projects: Dict[str, dict] = OrderedDict()
+        self._projects: dict[str, dict] = OrderedDict()
         # debrief_id → InterviewDebrief
-        self._debriefs: Dict[str, InterviewDebrief] = {}
+        self._debriefs: dict[str, InterviewDebrief] = {}
         # report_id → SynthesisReport
-        self._reports: Dict[str, SynthesisReport] = {}
+        self._reports: dict[str, SynthesisReport] = {}
 
     # ── Projects ────────────────────────────────────────────────────────────
 
@@ -55,10 +53,10 @@ class InMemoryStore:
         self._projects[project_id] = project
         return project
 
-    def get_project(self, project_id: str) -> Optional[dict]:
+    def get_project(self, project_id: str) -> dict | None:
         return self._projects.get(project_id)
 
-    def list_projects(self) -> List[dict]:
+    def list_projects(self) -> list[dict]:
         return list(self._projects.values())
 
     def add_debrief_to_project(self, project_id: str, debrief: InterviewDebrief) -> bool:
@@ -70,7 +68,7 @@ class InMemoryStore:
         project["debrief_count"] = len(project["debrief_ids"])
         return True
 
-    def get_debriefs_for_project(self, project_id: str) -> List[InterviewDebrief]:
+    def get_debriefs_for_project(self, project_id: str) -> list[InterviewDebrief]:
         project = self._projects.get(project_id)
         if project is None:
             return []
@@ -84,10 +82,10 @@ class InMemoryStore:
             self._projects[project_id]["report_id"] = report.report_id
             self._projects[project_id]["has_synthesis"] = True
 
-    def get_report(self, report_id: str) -> Optional[SynthesisReport]:
+    def get_report(self, report_id: str) -> SynthesisReport | None:
         return self._reports.get(report_id)
 
-    def get_report_for_project(self, project_id: str) -> Optional[SynthesisReport]:
+    def get_report_for_project(self, project_id: str) -> SynthesisReport | None:
         project = self._projects.get(project_id)
         if project is None or project.get("report_id") is None:
             return None
@@ -99,7 +97,7 @@ class InMemoryStore:
         reviewer_name: str,
         reviewer_approved: bool,
         final_reviewer_notes: str,
-    ) -> Optional[SynthesisReport]:
+    ) -> SynthesisReport | None:
         """Apply reviewer edits to a stored report. Returns None if not found."""
         from datetime import datetime as _dt
 

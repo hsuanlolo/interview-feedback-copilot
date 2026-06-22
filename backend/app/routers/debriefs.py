@@ -8,9 +8,7 @@ Endpoints:
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from typing import List
 from uuid import uuid4
 
 from fastapi import APIRouter, HTTPException
@@ -38,7 +36,7 @@ def _parse_debrief_file(text: str, filename: str) -> InterviewDebrief:
         [body text]
     """
     fields: dict = {}
-    body_lines: List[str] = []
+    body_lines: list[str] = []
     in_body = False
 
     for line in text.splitlines():
@@ -76,8 +74,8 @@ def _parse_debrief_file(text: str, filename: str) -> InterviewDebrief:
     )
 
 
-@router.get("/sample", response_model=List[InterviewDebrief])
-async def get_sample_debriefs() -> List[InterviewDebrief]:
+@router.get("/sample", response_model=list[InterviewDebrief])
+async def get_sample_debriefs() -> list[InterviewDebrief]:
     """Return the 5 bundled fictional debriefs for candidate Jordan Lee.
 
     These are used to demonstrate the full pipeline without any file upload.
@@ -92,7 +90,7 @@ async def get_sample_debriefs() -> List[InterviewDebrief]:
     if not paths:
         raise HTTPException(status_code=404, detail="No sample debrief files found.")
 
-    result: List[InterviewDebrief] = []
+    result: list[InterviewDebrief] = []
     for path in paths:
         try:
             text = path.read_text(encoding="utf-8")
@@ -101,6 +99,7 @@ async def get_sample_debriefs() -> List[InterviewDebrief]:
         except Exception as exc:
             # Log and skip a bad file rather than failing the whole response
             import logging
+
             logging.getLogger(__name__).warning("Skipping %s: %s", path.name, exc)
 
     if not result:

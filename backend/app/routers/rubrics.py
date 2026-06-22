@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -38,21 +37,23 @@ def _load_rubric_file(path: Path) -> dict:
         raise HTTPException(status_code=500, detail=f"Failed to parse rubric {path.name}: {exc}") from exc
 
 
-@router.get("/list", response_model=List[RubricMeta])
-async def list_rubrics() -> List[RubricMeta]:
+@router.get("/list", response_model=list[RubricMeta])
+async def list_rubrics() -> list[RubricMeta]:
     """Return metadata for all built-in rubrics."""
     if not _RUBRICS_DIR.exists():
         raise HTTPException(status_code=404, detail="Rubric directory not found.")
     results = []
     for path in sorted(_RUBRICS_DIR.glob("*.json")):
         data = _load_rubric_file(path)
-        results.append(RubricMeta(
-            rubric_id=data.get("rubric_id", path.stem),
-            role_title=data.get("role_title", path.stem),
-            role_level=data.get("role_level", ""),
-            department=data.get("department", ""),
-            filename=path.name,
-        ))
+        results.append(
+            RubricMeta(
+                rubric_id=data.get("rubric_id", path.stem),
+                role_title=data.get("role_title", path.stem),
+                role_level=data.get("role_level", ""),
+                department=data.get("department", ""),
+                filename=path.name,
+            )
+        )
     return results
 
 

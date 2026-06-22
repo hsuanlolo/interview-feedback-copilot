@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
 from uuid import uuid4
 
 import pytest
@@ -28,16 +27,12 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.schemas.models import (
-    Competency,
     EvidenceSpan,
     ExtractedSignal,
     InterviewDebrief,
-    RoleRubric,
     SignalType,
-    VerificationRequest,
-    VerificationResult,
 )
-from app.services.evidence_verifier import EvidenceVerifier, _check_span, verifier
+from app.services.evidence_verifier import _check_span, verifier
 from app.services.store import store
 
 client = TestClient(app)
@@ -125,7 +120,7 @@ def make_hallucinated_span(debrief: InterviewDebrief) -> EvidenceSpan:
 
 def make_signal(
     debrief: InterviewDebrief,
-    spans: List[EvidenceSpan],
+    spans: list[EvidenceSpan],
     competency_id: str = "stat",
     is_vague: bool = False,
 ) -> ExtractedSignal:
@@ -306,12 +301,8 @@ class TestEvidenceVerifier:
 
     def test_multiple_debriefs_cross_referenced_correctly(self):
         """Spans from debrief A must not be verified against debrief B's text."""
-        debrief_a = make_debrief(
-            "Alice: Jordan showed excellent statistical reasoning.", "Alice"
-        )
-        debrief_b = make_debrief(
-            "Bob: The candidate struggled with SQL window functions.", "Bob"
-        )
+        debrief_a = make_debrief("Alice: Jordan showed excellent statistical reasoning.", "Alice")
+        debrief_b = make_debrief("Bob: The candidate struggled with SQL window functions.", "Bob")
         span_a = make_valid_span(debrief_a, "Jordan showed excellent statistical reasoning.")
         span_b = make_valid_span(debrief_b, "The candidate struggled with SQL window functions.")
 
@@ -411,9 +402,14 @@ class TestVerifyEndpoint:
     def test_response_has_all_required_fields(self, valid_payload):
         data = client.post("/verify/evidence", json=valid_payload).json()
         required = {
-            "is_valid", "errors", "warnings",
-            "unsupported_claims", "vague_claims",
-            "citation_validity_rate", "total_spans_checked", "valid_spans",
+            "is_valid",
+            "errors",
+            "warnings",
+            "unsupported_claims",
+            "vague_claims",
+            "citation_validity_rate",
+            "total_spans_checked",
+            "valid_spans",
         }
         assert required <= set(data.keys())
 
@@ -453,15 +449,11 @@ class TestExtractThenVerify:
 
     @pytest.fixture
     def rubric_dict(self) -> dict:
-        return json.loads(
-            (SAMPLE_DIR / "rubrics" / "data_scientist_rubric.json").read_text()
-        )
+        return json.loads((SAMPLE_DIR / "rubrics" / "data_scientist_rubric.json").read_text())
 
     @pytest.fixture
     def debrief_text(self) -> str:
-        return (
-            SAMPLE_DIR / "debriefs" / "candidate_001_interviewer_1.txt"
-        ).read_text()
+        return (SAMPLE_DIR / "debriefs" / "candidate_001_interviewer_1.txt").read_text()
 
     def test_baseline_signals_all_pass_verification(self, rubric_dict, debrief_text):
         # Step 1: extract
@@ -547,6 +539,5 @@ class TestExtractThenVerify:
         data = verify_resp.json()
 
         assert data["citation_validity_rate"] == 1.0, (
-            f"Expected 100% citation validity from baseline extractor. "
-            f"Errors: {data['errors']}"
+            f"Expected 100% citation validity from baseline extractor. Errors: {data['errors']}"
         )

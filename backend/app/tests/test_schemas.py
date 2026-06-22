@@ -7,23 +7,15 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.models import (
-    Candidate,
-    CompetencyAssessment,
-    CoverageStatus,
-    DisagreementFlag,
-    DisagreementSeverity,
-    DisagreementType,
+    Competency,
     EvidenceSpan,
     ExtractedSignal,
     InterviewDebrief,
-    ProjectCreate,
     RoleRubric,
     SignalType,
     SynthesisReport,
     VerificationResult,
-    Competency,
 )
-
 
 # ---------------------------------------------------------------------------
 # EvidenceSpan

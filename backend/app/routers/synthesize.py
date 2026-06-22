@@ -9,7 +9,7 @@ for reviewer edits (PROMPT 12).
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.schemas.models import SynthesisReport, SynthesisRequest
 from app.services.store import store

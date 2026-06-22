@@ -20,8 +20,6 @@ Why build this before an LLM extractor?
 from __future__ import annotations
 
 import re
-from typing import List, Optional, Tuple
-from uuid import uuid4
 
 from app.schemas.models import (
     Competency,
@@ -36,22 +34,66 @@ EXTRACTOR_VERSION = "baseline-v1"
 
 # Generic sentiment word lists used when rubric indicator phrases don't match.
 # These are intentionally broad — the LLM extractor will be more precise.
-_POSITIVE_WORDS: List[str] = [
-    "strong", "excellent", "clear", "impressive", "exceptional", "solid",
-    "correctly", "well-structured", "well structured", "good", "demonstrated",
-    "thorough", "proactively", "accurate", "insightful", "effective",
-    "articulate", "confident", "competent", "great", "outstanding",
+_POSITIVE_WORDS: list[str] = [
+    "strong",
+    "excellent",
+    "clear",
+    "impressive",
+    "exceptional",
+    "solid",
+    "correctly",
+    "well-structured",
+    "well structured",
+    "good",
+    "demonstrated",
+    "thorough",
+    "proactively",
+    "accurate",
+    "insightful",
+    "effective",
+    "articulate",
+    "confident",
+    "competent",
+    "great",
+    "outstanding",
 ]
-_NEGATIVE_WORDS: List[str] = [
-    "weak", "poor", "missed", "failed", "struggled", "unclear", "incorrect",
-    "wrong", "shallow", "vague", "confused", "difficulty", "did not",
-    "didn't", "unable", "inadequate", "hesitat", "couldn't", "lacked",
-    "limited", "surface-level", "high-level response", "required hints",
-    "required prompting", "fell short",
+_NEGATIVE_WORDS: list[str] = [
+    "weak",
+    "poor",
+    "missed",
+    "failed",
+    "struggled",
+    "unclear",
+    "incorrect",
+    "wrong",
+    "shallow",
+    "vague",
+    "confused",
+    "difficulty",
+    "did not",
+    "didn't",
+    "unable",
+    "inadequate",
+    "hesitat",
+    "couldn't",
+    "lacked",
+    "limited",
+    "surface-level",
+    "high-level response",
+    "required hints",
+    "required prompting",
+    "fell short",
 ]
-_VAGUE_PHRASES: List[str] = [
-    "kind of", "sort of", "seems to", "somewhat", "maybe", "perhaps",
-    "might be", "not sure", "hard to say",
+_VAGUE_PHRASES: list[str] = [
+    "kind of",
+    "sort of",
+    "seems to",
+    "somewhat",
+    "maybe",
+    "perhaps",
+    "might be",
+    "not sure",
+    "hard to say",
 ]
 
 
@@ -75,18 +117,13 @@ def _extract_body(raw_text: str) -> str:
     # No separator: skip lines that look like headers
     # (≤90 chars, contains exactly one ':', not starting a quote)
     lines = raw_text.splitlines()
-    body_lines: List[str] = []
+    body_lines: list[str] = []
     header_done = False
 
     for line in lines:
         stripped = line.strip()
         if not header_done:
-            is_header_line = (
-                stripped
-                and ":" in stripped
-                and len(stripped) <= 90
-                and not stripped.startswith('"')
-            )
+            is_header_line = stripped and ":" in stripped and len(stripped) <= 90 and not stripped.startswith('"')
             if is_header_line or (not stripped and not body_lines):
                 continue
             header_done = True
@@ -95,7 +132,7 @@ def _extract_body(raw_text: str) -> str:
     return "\n".join(body_lines).strip()
 
 
-def _split_into_sentences(text: str) -> List[Tuple[str, int, int]]:
+def _split_into_sentences(text: str) -> list[tuple[str, int, int]]:
     """
     Return [(sentence_text, start_char, end_char), ...] for text.
 
@@ -108,11 +145,11 @@ def _split_into_sentences(text: str) -> List[Tuple[str, int, int]]:
     starting after the previous sentence's end. This keeps them accurate
     even after stripping whitespace from each part.
     """
-    results: List[Tuple[str, int, int]] = []
+    results: list[tuple[str, int, int]] = []
     search_from = 0
 
     # Split pattern: sentence boundary OR paragraph break
-    parts = re.split(r'(?<=[.!?])\s+(?=[A-Z\"\'])|(?:\n\s*){2,}', text)
+    parts = re.split(r"(?<=[.!?])\s+(?=[A-Z\"\'])|(?:\n\s*){2,}", text)
 
     for raw_part in parts:
         sentence = raw_part.strip()
@@ -137,7 +174,7 @@ def _split_into_sentences(text: str) -> List[Tuple[str, int, int]]:
 
 def _build_keyword_sets(
     competency: Competency,
-) -> Tuple[List[str], List[str], List[str]]:
+) -> tuple[list[str], list[str], list[str]]:
     """
     Return (name_keywords, positive_phrases, negative_phrases).
 
@@ -147,8 +184,22 @@ def _build_keyword_sets(
     negative_phrases – exact substrings from rubric negative_indicators (lowercase).
     """
     stopwords = {
-        "with", "from", "that", "this", "they", "their", "have", "about",
-        "when", "able", "make", "well", "also", "than", "more", "less",
+        "with",
+        "from",
+        "that",
+        "this",
+        "they",
+        "their",
+        "have",
+        "about",
+        "when",
+        "able",
+        "make",
+        "well",
+        "also",
+        "than",
+        "more",
+        "less",
     }
 
     name_words = re.findall(r"\w+", competency.name.lower())
@@ -156,8 +207,7 @@ def _build_keyword_sets(
 
     name_kws = list(
         dict.fromkeys(  # preserve order, deduplicate
-            w for w in name_words + desc_words[:8]
-            if len(w) > 3 and w not in stopwords
+            w for w in name_words + desc_words[:8] if len(w) > 3 and w not in stopwords
         )
     )
 
@@ -169,9 +219,9 @@ def _build_keyword_sets(
 
 def _sentence_matches_competency(
     sentence: str,
-    name_kws: List[str],
-    pos_phrases: List[str],
-    neg_phrases: List[str],
+    name_kws: list[str],
+    pos_phrases: list[str],
+    neg_phrases: list[str],
 ) -> bool:
     """
     True if the sentence likely discusses this competency.
@@ -191,10 +241,10 @@ def _sentence_matches_competency(
 
 
 def _classify_signal(
-    sentences: List[str],
-    pos_phrases: List[str],
-    neg_phrases: List[str],
-) -> Tuple[SignalType, float]:
+    sentences: list[str],
+    pos_phrases: list[str],
+    neg_phrases: list[str],
+) -> tuple[SignalType, float]:
     """
     Classify signal direction and assign a confidence score.
 
@@ -234,7 +284,7 @@ def _classify_signal(
     return SignalType.UNCLEAR, 0.25
 
 
-def _is_vague(sentences: List[str]) -> bool:
+def _is_vague(sentences: list[str]) -> bool:
     """True if the evidence is too sparse or hedged to be reliable."""
     text = " ".join(sentences).lower()
     if any(phrase in text for phrase in _VAGUE_PHRASES):
@@ -244,7 +294,7 @@ def _is_vague(sentences: List[str]) -> bool:
 
 
 def _generate_claim(
-    sentences: List[str],
+    sentences: list[str],
     competency: Competency,
     signal_type: SignalType,
 ) -> str:
@@ -255,7 +305,7 @@ def _generate_claim(
     The claim is the basis for the human-readable synthesis row.
     """
     first = sentences[0].strip()
-    if not first[-1:] in ".!?":
+    if first[-1:] not in ".!?":
         first += "."
     return first if len(first) <= 200 else first[:197] + "..."
 
@@ -268,7 +318,7 @@ def _generate_claim(
 def extract_signals_baseline(
     debrief: InterviewDebrief,
     rubric: RoleRubric,
-) -> List[ExtractedSignal]:
+) -> list[ExtractedSignal]:
     """
     Extract evidence signals from one debrief using keyword matching.
 
@@ -289,13 +339,13 @@ def extract_signals_baseline(
     if body_offset == -1:
         body_offset = 0
 
-    signals: List[ExtractedSignal] = []
+    signals: list[ExtractedSignal] = []
 
     for competency in rubric.competencies:
         name_kws, pos_phrases, neg_phrases = _build_keyword_sets(competency)
 
         # Find matching sentences and adjust offsets to raw_text coordinates
-        matched: List[Tuple[str, int, int]] = []
+        matched: list[tuple[str, int, int]] = []
         for sent_text, s_start, s_end in sentences_in_body:
             if _sentence_matches_competency(sent_text, name_kws, pos_phrases, neg_phrases):
                 abs_start = s_start + body_offset
@@ -306,7 +356,7 @@ def extract_signals_baseline(
             continue
 
         # Build EvidenceSpan objects (cap at 4 to keep responses concise)
-        spans: List[EvidenceSpan] = []
+        spans: list[EvidenceSpan] = []
         for sent_text, abs_start, abs_end in matched[:4]:
             try:
                 span = EvidenceSpan(
@@ -347,9 +397,9 @@ def extract_signals_baseline(
 
 
 def extract_all_baseline(
-    debriefs: List[InterviewDebrief],
+    debriefs: list[InterviewDebrief],
     rubric: RoleRubric,
-) -> Tuple[List[ExtractedSignal], List[str]]:
+) -> tuple[list[ExtractedSignal], list[str]]:
     """
     Run baseline extraction across all debriefs for one candidate.
 
@@ -358,8 +408,8 @@ def extract_all_baseline(
       - Very short debriefs (< 30 words)
       - Debriefs from which no signals were extracted
     """
-    all_signals: List[ExtractedSignal] = []
-    warnings: List[str] = []
+    all_signals: list[ExtractedSignal] = []
+    warnings: list[str] = []
 
     for debrief in debriefs:
         if debrief.word_count < 30:

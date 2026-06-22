@@ -14,10 +14,7 @@ init_db()  # create SQLite tables on startup if they don't exist
 app = FastAPI(
     title=settings.app_title,
     version=settings.app_version,
-    description=(
-        "Evidence-Grounded Interview Feedback Synthesis Copilot. "
-        "Surfaces evidence. Human decides."
-    ),
+    description=("Evidence-Grounded Interview Feedback Synthesis Copilot. Surfaces evidence. Human decides."),
 )
 
 # Security headers on every response
@@ -44,17 +41,14 @@ app.include_router(review.router)
 
 # ── System endpoints ─────────────────────────────────────────────────────────
 
+
 @app.get("/health", tags=["system"])
 async def health() -> dict:
     """Health check. Returns service status and current operating mode."""
     return {
         "status": "ok",
         "version": settings.app_version,
-        "llm_mode": (
-            "mock" if settings.llm_mock_mode
-            else "baseline" if settings.baseline_mode
-            else "llm"
-        ),
+        "llm_mode": ("mock" if settings.llm_mock_mode else "baseline" if settings.baseline_mode else "llm"),
     }
 
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
 from uuid import uuid4
 
 import pytest
@@ -53,7 +52,7 @@ def make_competency(name: str = "Statistical Reasoning", cid: str = "stat") -> C
     )
 
 
-def make_rubric(competencies: List[Competency] | None = None) -> RoleRubric:
+def make_rubric(competencies: list[Competency] | None = None) -> RoleRubric:
     return RoleRubric(
         role_title="Data Scientist",
         competencies=competencies or [make_competency()],
@@ -93,6 +92,7 @@ def make_signal(
 # ---------------------------------------------------------------------------
 # Unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestDisagreementDetector:
     def test_no_signals_returns_empty(self):
@@ -135,7 +135,10 @@ class TestDisagreementDetector:
     def test_same_direction_no_conflict(self):
         d1, d2 = make_debrief("Alice"), make_debrief("Bob")
         rubric = make_rubric()
-        signals = [make_signal(d1, "stat", SignalType.POSITIVE), make_signal(d2, "stat", SignalType.POSITIVE)]
+        signals = [
+            make_signal(d1, "stat", SignalType.POSITIVE),
+            make_signal(d2, "stat", SignalType.POSITIVE),
+        ]
         flags = detect_disagreements(signals, rubric, [d1, d2])
         direction = [f for f in flags if f.disagreement_type == DisagreementType.DIRECTION_CONFLICT]
         assert direction == []
@@ -190,8 +193,10 @@ class TestDisagreementDetector:
     def test_single_minority_voter_not_flagged(self):
         """1 dissenting voter out of 4 clear voters = 25% minority, below the 35% threshold."""
         d1, d2, d3, d4 = (
-            make_debrief("Alice"), make_debrief("Bob"),
-            make_debrief("Carol"), make_debrief("Dave"),
+            make_debrief("Alice"),
+            make_debrief("Bob"),
+            make_debrief("Carol"),
+            make_debrief("Dave"),
         )
         rubric = make_rubric()
         # 3 net-positive voters vs 1 net-negative voter → ratio=0.25 < 0.35 → no conflict
@@ -208,8 +213,11 @@ class TestDisagreementDetector:
     def test_mixed_interviewer_excluded_from_conflict(self):
         """A tied interviewer is excluded; remaining 3-vs-1 split (25%) is below the 30% threshold."""
         d1, d2, d3, d4, d5 = (
-            make_debrief("Alice"), make_debrief("Bob"),
-            make_debrief("Carol"), make_debrief("Dave"), make_debrief("Eve"),
+            make_debrief("Alice"),
+            make_debrief("Bob"),
+            make_debrief("Carol"),
+            make_debrief("Dave"),
+            make_debrief("Eve"),
         )
         rubric = make_rubric()
         # Alice: 1 pos + 1 neg → net=tied → excluded
@@ -231,8 +239,12 @@ class TestDisagreementDetector:
     def test_low_ratio_not_flagged(self):
         """5 positive voters vs 1 negative voter = ratio 17%, clearly below the 30% threshold."""
         d1, d2, d3, d4, d5, d6 = (
-            make_debrief("Alice"), make_debrief("Bob"), make_debrief("Carol"),
-            make_debrief("Dave"), make_debrief("Eve"), make_debrief("Frank"),
+            make_debrief("Alice"),
+            make_debrief("Bob"),
+            make_debrief("Carol"),
+            make_debrief("Dave"),
+            make_debrief("Eve"),
+            make_debrief("Frank"),
         )
         rubric = make_rubric()
         # 5 net-positive voters vs 1 net-negative voter → ratio=0.17 < 0.30 → no conflict
@@ -251,8 +263,11 @@ class TestDisagreementDetector:
     def test_medium_severity_for_skewed_split(self):
         """3 positive voters vs 2 negative voters = ratio 40%, between 35% and 45% → MEDIUM."""
         d1, d2, d3, d4, d5 = (
-            make_debrief("Alice"), make_debrief("Bob"), make_debrief("Carol"),
-            make_debrief("Dave"), make_debrief("Eve"),
+            make_debrief("Alice"),
+            make_debrief("Bob"),
+            make_debrief("Carol"),
+            make_debrief("Dave"),
+            make_debrief("Eve"),
         )
         rubric = make_rubric()
         # 3 net-positive vs 2 net-negative → ratio=0.40, fires (≥0.35) but not HIGH (<0.45)
@@ -292,6 +307,7 @@ class TestDisagreementDetector:
 # ---------------------------------------------------------------------------
 # HTTP endpoint
 # ---------------------------------------------------------------------------
+
 
 class TestDisagreementsEndpoint:
     @pytest.fixture

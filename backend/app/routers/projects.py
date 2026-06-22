@@ -12,8 +12,6 @@ Endpoints:
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import APIRouter, HTTPException
 
 from app.schemas.models import ProjectCreate
@@ -29,7 +27,7 @@ async def create_project(data: ProjectCreate) -> dict:
 
 
 @router.get("")
-async def list_projects() -> List[dict]:
+async def list_projects() -> list[dict]:
     """List all projects (newest first)."""
     return list(reversed(store.list_projects()))
 

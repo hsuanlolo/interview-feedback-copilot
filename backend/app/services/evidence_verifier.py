@@ -25,8 +25,6 @@ is_valid is True only when citation_validity_rate == 1.0 (zero errors).
 
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
-
 from app.schemas.models import (
     ExtractedSignal,
     InterviewDebrief,
@@ -43,7 +41,7 @@ def _check_span(
     start_char: int,
     end_char: int,
     quoted_text: str,
-) -> Tuple[bool, List[VerificationError]]:
+) -> tuple[bool, list[VerificationError]]:
     """
     Check one span against its source text.
 
@@ -75,10 +73,7 @@ def _check_span(
         VerificationError(
             span_id=span_id,
             error_type="text_not_found",
-            description=(
-                f"quoted_text {quoted_text[:60]!r} does not appear "
-                "anywhere in the source debrief."
-            ),
+            description=(f"quoted_text {quoted_text[:60]!r} does not appear anywhere in the source debrief."),
         )
     ]
 
@@ -96,8 +91,8 @@ class EvidenceVerifier:
 
     def verify(
         self,
-        signals: List[ExtractedSignal],
-        debriefs: List[InterviewDebrief],
+        signals: list[ExtractedSignal],
+        debriefs: list[InterviewDebrief],
     ) -> VerificationResult:
         """
         Verify all spans in signals against their source debriefs.
@@ -109,11 +104,11 @@ class EvidenceVerifier:
                   Must include every debrief referenced by span.source_debrief_id.
         """
         # Build lookup by debrief_id for O(1) access per span
-        debrief_map: Dict[str, str] = {d.debrief_id: d.raw_text for d in debriefs}
+        debrief_map: dict[str, str] = {d.debrief_id: d.raw_text for d in debriefs}
 
-        all_errors: List[VerificationError] = []
-        unsupported_claims: List[str] = []
-        vague_claims: List[str] = []
+        all_errors: list[VerificationError] = []
+        unsupported_claims: list[str] = []
+        vague_claims: list[str] = []
         total_spans = 0
         valid_span_count = 0
 
@@ -162,11 +157,10 @@ class EvidenceVerifier:
         # Citation validity rate — 1.0 when no spans were checked (nothing to invalidate)
         rate = valid_span_count / total_spans if total_spans > 0 else 1.0
 
-        warnings: List[str] = []
+        warnings: list[str] = []
         if vague_claims:
             warnings.append(
-                f"{len(vague_claims)} signal(s) are marked vague — "
-                "review for specificity before synthesis."
+                f"{len(vague_claims)} signal(s) are marked vague — review for specificity before synthesis."
             )
         if unsupported_claims:
             warnings.append(

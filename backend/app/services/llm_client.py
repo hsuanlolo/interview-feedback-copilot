@@ -22,9 +22,7 @@ Pydantic validation gates all LLM output (non-negotiable project rule):
 
 from __future__ import annotations
 
-import json
 import logging
-from typing import List, Optional, Tuple
 
 from fastapi import HTTPException
 from pydantic import BaseModel, Field, ValidationError
@@ -59,9 +57,7 @@ class LLMSignalDraft(BaseModel):
     competency_id: str = Field(..., min_length=1)
     signal_type: SignalType
     claim: str = Field(..., min_length=10)
-    evidence_quotes: List[str] = Field(
-        ..., min_length=1, description="Verbatim quotes from the debrief"
-    )
+    evidence_quotes: list[str] = Field(..., min_length=1, description="Verbatim quotes from the debrief")
     confidence: float = Field(0.70, ge=0.0, le=1.0)
     is_vague: bool = False
     reasoning: str = ""
@@ -70,7 +66,7 @@ class LLMSignalDraft(BaseModel):
 class LLMExtractionOutput(BaseModel):
     """Top-level wrapper validated against the LLM's tool_use response."""
 
-    signals: List[LLMSignalDraft]
+    signals: list[LLMSignalDraft]
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +150,7 @@ Call the extract_competency_signals tool once with everything you found.\
 
 def _build_user_message(debrief: InterviewDebrief, rubric: RoleRubric) -> str:
     """Build the user-turn message containing the rubric and debrief."""
-    competency_lines: List[str] = []
+    competency_lines: list[str] = []
     for c in rubric.competencies:
         pos = ", ".join(f'"{p}"' for p in c.positive_indicators[:4]) or "(none listed)"
         neg = ", ".join(f'"{n}"' for n in c.negative_indicators[:4]) or "(none listed)"
@@ -184,10 +180,10 @@ def _build_user_message(debrief: InterviewDebrief, rubric: RoleRubric) -> str:
 
 def _locate_quotes(
     raw_text: str,
-    quotes: List[str],
+    quotes: list[str],
     debrief_id: str,
     interviewer_name: str,
-) -> Tuple[List[EvidenceSpan], List[str]]:
+) -> tuple[list[EvidenceSpan], list[str]]:
     """
     Find each verbatim quote in raw_text and build EvidenceSpan objects.
 
@@ -195,10 +191,10 @@ def _locate_quotes(
     Quotes absent from raw_text are hallucinated citations — they produce a
     warning but NEVER a span. The caller receives an honest list.
     """
-    spans: List[EvidenceSpan] = []
-    warnings: List[str] = []
+    spans: list[EvidenceSpan] = []
+    warnings: list[str] = []
 
-    seen_offsets: List[int] = []
+    seen_offsets: list[int] = []
 
     for raw_quote in quotes:
         quote = raw_quote.strip()
@@ -207,9 +203,7 @@ def _locate_quotes(
 
         idx = raw_text.find(quote)
         if idx == -1:
-            warnings.append(
-                f"Hallucinated citation — quote not found in debrief: {quote[:80]!r}"
-            )
+            warnings.append(f"Hallucinated citation — quote not found in debrief: {quote[:80]!r}")
             continue
 
         # Guard against the same span appearing twice (LLM repetition)
@@ -227,9 +221,7 @@ def _locate_quotes(
             )
             spans.append(span)
         except ValidationError as exc:
-            warnings.append(
-                f"Span validation failed for quote {quote[:40]!r}: {exc.error_count()} errors"
-            )
+            warnings.append(f"Span validation failed for quote {quote[:40]!r}: {exc.error_count()} errors")
 
     return spans, warnings
 
@@ -238,7 +230,7 @@ def _draft_to_signal(
     draft: LLMSignalDraft,
     debrief: InterviewDebrief,
     extractor_version: str,
-) -> Tuple[Optional[ExtractedSignal], List[str]]:
+) -> tuple[ExtractedSignal | None, list[str]]:
     """
     Convert a validated LLMSignalDraft into an ExtractedSignal.
 
@@ -313,7 +305,7 @@ class LLMClientBase:
         self,
         debrief: InterviewDebrief,
         rubric: RoleRubric,
-    ) -> Tuple[List[ExtractedSignal], List[str]]:
+    ) -> tuple[list[ExtractedSignal], list[str]]:
         raise NotImplementedError
 
 
@@ -333,20 +325,18 @@ class MockLLMClient(LLMClientBase):
         self,
         debrief: InterviewDebrief,
         rubric: RoleRubric,
-    ) -> Tuple[List[ExtractedSignal], List[str]]:
+    ) -> tuple[list[ExtractedSignal], list[str]]:
         from app.services.baseline_extractor import _extract_body, _split_into_sentences
 
         body = _extract_body(debrief.raw_text)
         sentences = _split_into_sentences(body)
-        warnings: List[str] = []
+        warnings: list[str] = []
 
         if not sentences:
-            warnings.append(
-                f"[mock] No sentences found in debrief from {debrief.interviewer_name!r}"
-            )
+            warnings.append(f"[mock] No sentences found in debrief from {debrief.interviewer_name!r}")
             return [], warnings
 
-        signals: List[ExtractedSignal] = []
+        signals: list[ExtractedSignal] = []
 
         for i, competency in enumerate(rubric.competencies[:3]):
             sent_text, _, _ = sentences[min(i, len(sentences) - 1)]
@@ -400,8 +390,7 @@ class AnthropicLLMClient(LLMClientBase):
             self._client = _anthropic.Anthropic(api_key=api_key)
         except ImportError:
             raise RuntimeError(
-                "The 'anthropic' package is required for LLM extraction. "
-                "Install it with: pip install anthropic"
+                "The 'anthropic' package is required for LLM extraction. Install it with: pip install anthropic"
             )
         self.model = model
 
@@ -465,11 +454,11 @@ class AnthropicLLMClient(LLMClientBase):
         self,
         debrief: InterviewDebrief,
         rubric: RoleRubric,
-    ) -> Tuple[List[ExtractedSignal], List[str]]:
+    ) -> tuple[list[ExtractedSignal], list[str]]:
         extraction = self._call_api(debrief, rubric)
 
-        signals: List[ExtractedSignal] = []
-        all_warnings: List[str] = []
+        signals: list[ExtractedSignal] = []
+        all_warnings: list[str] = []
 
         # Validate each competency_id against the rubric (catch IDs Claude invented)
         valid_cids = {c.competency_id for c in rubric.competencies}
@@ -477,8 +466,7 @@ class AnthropicLLMClient(LLMClientBase):
         for draft in extraction.signals:
             if draft.competency_id not in valid_cids:
                 all_warnings.append(
-                    f"LLM returned unknown competency_id '{draft.competency_id}' — "
-                    "not in rubric. Signal discarded."
+                    f"LLM returned unknown competency_id '{draft.competency_id}' — not in rubric. Signal discarded."
                 )
                 continue
 
@@ -530,18 +518,18 @@ def get_llm_client() -> LLMClientBase:
 
 
 def extract_all_llm(
-    debriefs: List[InterviewDebrief],
+    debriefs: list[InterviewDebrief],
     rubric: RoleRubric,
     client: LLMClientBase,
-) -> Tuple[List[ExtractedSignal], List[str]]:
+) -> tuple[list[ExtractedSignal], list[str]]:
     """
     Run LLM extraction across all debriefs for one candidate.
 
     Returns (signals, warnings).
     Warns on very short debriefs (< 30 words) — thin input produces thin output.
     """
-    all_signals: List[ExtractedSignal] = []
-    all_warnings: List[str] = []
+    all_signals: list[ExtractedSignal] = []
+    all_warnings: list[str] = []
 
     for debrief in debriefs:
         if debrief.word_count < 30:
@@ -555,9 +543,6 @@ def extract_all_llm(
         all_warnings.extend(warnings)
 
         if not signals:
-            all_warnings.append(
-                f"No signals extracted from {debrief.interviewer_name!r}'s debrief "
-                "via LLM extraction."
-            )
+            all_warnings.append(f"No signals extracted from {debrief.interviewer_name!r}'s debrief via LLM extraction.")
 
     return all_signals, all_warnings

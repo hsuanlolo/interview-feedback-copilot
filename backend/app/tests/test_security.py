@@ -15,6 +15,7 @@ client = TestClient(app)
 # PII scrubbing
 # ---------------------------------------------------------------------------
 
+
 class TestPIIScrubbing:
     def test_scrubs_email(self):
         result = scrub_pii_for_log("contact jordan@example.com for details")
@@ -58,6 +59,7 @@ class TestPIIScrubbing:
 # Debrief text validation
 # ---------------------------------------------------------------------------
 
+
 class TestDebriefValidation:
     def test_accepts_normal_text(self):
         text = "Jordan showed strong reasoning skills during the interview."
@@ -77,6 +79,7 @@ class TestDebriefValidation:
 # Security headers
 # ---------------------------------------------------------------------------
 
+
 class TestSecurityHeaders:
     def test_health_has_no_store_header(self):
         resp = client.get("/health")
@@ -91,8 +94,17 @@ class TestSecurityHeaders:
         assert resp.headers.get("x-frame-options") == "DENY"
 
     def test_post_endpoint_has_security_headers(self):
-        resp = client.post("/analyze/coverage", json={"signals": [], "rubric": {
-            "role_title": "DS", "competencies": [],
-            "rubric_id": "r1", "role_level": "IC", "department": "Eng",
-        }})
+        resp = client.post(
+            "/analyze/coverage",
+            json={
+                "signals": [],
+                "rubric": {
+                    "role_title": "DS",
+                    "competencies": [],
+                    "rubric_id": "r1",
+                    "role_level": "IC",
+                    "department": "Eng",
+                },
+            },
+        )
         assert resp.headers.get("x-content-type-options") == "nosniff"

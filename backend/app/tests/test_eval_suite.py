@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from app.evals.run_eval import run_eval
 
 SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
@@ -23,7 +21,14 @@ class TestEvalSuite:
     def test_gold_file_has_required_keys(self):
         for gf in GOLD_DIR.glob("*.json"):
             data = json.loads(gf.read_text())
-            for key in ("gold_id", "candidate_id", "debrief_files", "concerns", "disagreements", "coverage_gaps"):
+            for key in (
+                "gold_id",
+                "candidate_id",
+                "debrief_files",
+                "concerns",
+                "disagreements",
+                "coverage_gaps",
+            ):
                 assert key in data, f"Missing key '{key}' in {gf.name}"
 
     def test_run_eval_all_pass(self):

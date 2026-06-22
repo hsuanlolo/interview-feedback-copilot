@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,8 +28,6 @@ from pydantic import ValidationError
 from app.main import app
 from app.schemas.models import (
     Competency,
-    EvidenceSpan,
-    ExtractedSignal,
     InterviewDebrief,
     RoleRubric,
     SignalType,
@@ -38,7 +35,6 @@ from app.schemas.models import (
 from app.services.llm_client import (
     EXTRACTOR_VERSION_LLM,
     MOCK_EXTRACTOR_VERSION,
-    LLMClientBase,
     LLMExtractionOutput,
     LLMSignalDraft,
     MockLLMClient,
@@ -84,8 +80,8 @@ def make_debrief(text: str, interviewer: str = "Alice") -> InterviewDebrief:
 def make_competency(
     name: str = "Statistical Reasoning",
     cid: str = "stat",
-    pos: List[str] | None = None,
-    neg: List[str] | None = None,
+    pos: list[str] | None = None,
+    neg: list[str] | None = None,
 ) -> Competency:
     return Competency(
         competency_id=cid,
@@ -96,7 +92,7 @@ def make_competency(
     )
 
 
-def make_rubric(competencies: List[Competency] | None = None) -> RoleRubric:
+def make_rubric(competencies: list[Competency] | None = None) -> RoleRubric:
     return RoleRubric(
         role_title="Data Scientist",
         competencies=competencies or [make_competency()],
@@ -291,10 +287,12 @@ class TestMockLLMClient:
     def test_covers_multiple_competencies(self):
         mock = MockLLMClient()
         debrief = make_debrief(RICH_DEBRIEF)
-        rubric = make_rubric([
-            make_competency("Statistical Reasoning", "stat"),
-            make_competency("Communication", "comm"),
-        ])
+        rubric = make_rubric(
+            [
+                make_competency("Statistical Reasoning", "stat"),
+                make_competency("Communication", "comm"),
+            ]
+        )
         signals, _ = mock.extract_signals(debrief, rubric)
         cids = {s.competency_id for s in signals}
         # Mock covers up to 3 competencies; with 2 in rubric, expect 2
@@ -442,9 +440,7 @@ class TestGetLLMClientFactory:
         assert not settings.anthropic_api_key, (
             "ANTHROPIC_API_KEY is set in the test environment — this test expects it absent"
         )
-        assert not settings.llm_mock_mode, (
-            "LLM_MOCK_MODE is True in the test environment — this test expects it False"
-        )
+        assert not settings.llm_mock_mode, "LLM_MOCK_MODE is True in the test environment — this test expects it False"
 
         body = {
             "rubric": json.loads((SAMPLE_DIR / "rubrics" / "data_scientist_rubric.json").read_text()),
@@ -496,16 +492,11 @@ class TestValidationGating:
         """If Claude returns a signal_type not in the enum, it must raise — not silently accept."""
         anthropic_client = self._make_anthropic_client()
 
-        bad_output = {"signals": [{"competency_id": "stat", "signal_type": "very_positive",
-                                   "claim": "Candidate was very positive.", "evidence_quotes": ["foo"]}]}
-        anthropic_client._call_api = MagicMock(side_effect=lambda d, r: (
-            (_ for _ in ()).throw(
-                __import__("fastapi").HTTPException(
-                    status_code=422,
-                    detail="LLM output failed schema validation"
-                )
+        anthropic_client._call_api = MagicMock(
+            side_effect=lambda d, r: (_ for _ in ()).throw(
+                __import__("fastapi").HTTPException(status_code=422, detail="LLM output failed schema validation")
             )
-        ))
+        )
 
         from fastapi import HTTPException
 

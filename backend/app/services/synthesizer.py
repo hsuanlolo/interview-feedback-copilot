@@ -16,8 +16,6 @@ Non-negotiable rules enforced here:
 
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import HTTPException
 
 from app.schemas.models import (
@@ -26,9 +24,6 @@ from app.schemas.models import (
     CoverageStatus,
     DisagreementFlag,
     DisagreementSeverity,
-    ExtractedSignal,
-    InterviewDebrief,
-    RoleRubric,
     SynthesisReport,
     SynthesisRequest,
 )
@@ -38,9 +33,9 @@ from app.services.evidence_verifier import verifier
 
 
 def _generate_executive_summary(
-    assessments: List[CompetencyAssessment],
-    flags: List[DisagreementFlag],
-    gaps: List[CoverageGap],
+    assessments: list[CompetencyAssessment],
+    flags: list[DisagreementFlag],
+    gaps: list[CoverageGap],
     n_debriefs: int,
     n_signals: int,
 ) -> str:
@@ -55,7 +50,7 @@ def _generate_executive_summary(
     not_covered = [g for g in gaps if g.coverage_status == CoverageStatus.NOT_COVERED]
     high_flags = [f for f in flags if f.severity == DisagreementSeverity.HIGH]
 
-    parts: List[str] = [
+    parts: list[str] = [
         f"This synthesis covers {n_debriefs} interview debrief(s) yielding "
         f"{n_signals} extracted signal(s) across {len(assessments)} competency(ies)."
     ]
@@ -70,27 +65,19 @@ def _generate_executive_summary(
 
     if conflicted:
         names = ", ".join(a.competency_name for a in conflicted[:2])
-        parts.append(
-            f"{len(conflicted)} competency(ies) show interviewer disagreement: {names}."
-        )
+        parts.append(f"{len(conflicted)} competency(ies) show interviewer disagreement: {names}.")
 
     if not_covered:
         names = ", ".join(g.competency_name for g in not_covered[:3])
         more = f" (and {len(not_covered) - 3} more)" if len(not_covered) > 3 else ""
-        parts.append(
-            f"{len(not_covered)} required competency(ies) were not assessed: {names}{more}."
-        )
+        parts.append(f"{len(not_covered)} required competency(ies) were not assessed: {names}{more}.")
 
     if high_flags:
         parts.append(
-            f"{len(high_flags)} high-severity disagreement(s) require committee discussion "
-            "before a decision is made."
+            f"{len(high_flags)} high-severity disagreement(s) require committee discussion before a decision is made."
         )
 
-    parts.append(
-        "This report organises evidence for human review. "
-        "No hire/no-hire recommendation is produced."
-    )
+    parts.append("This report organises evidence for human review. No hire/no-hire recommendation is produced.")
 
     return " ".join(parts)
 
@@ -142,9 +129,7 @@ def synthesize(request: SynthesisRequest) -> SynthesisReport:
     extractor_ver = request.signals[0].extractor_version if request.signals else "none"
 
     questions = [
-        f.resolution_suggestion
-        for f in flags
-        if f.severity == DisagreementSeverity.HIGH and f.resolution_suggestion
+        f.resolution_suggestion for f in flags if f.severity == DisagreementSeverity.HIGH and f.resolution_suggestion
     ]
 
     return SynthesisReport(

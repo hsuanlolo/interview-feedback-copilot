@@ -14,7 +14,6 @@ from app.schemas.models import (
     EvidenceSpan,
     ExtractedSignal,
     InterviewDebrief,
-    RoleRubric,
     SignalType,
 )
 from app.services.store import store
@@ -33,6 +32,7 @@ def reset():
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_debrief(
     text: str = "Jordan showed strong statistical reasoning without any prompting.",
@@ -86,6 +86,7 @@ def make_synthesis_body(signals, debriefs, rubric_dict: dict) -> dict:
 # PROMPT 10: Synthesis endpoint
 # ---------------------------------------------------------------------------
 
+
 class TestSynthesisEndpoint:
     @pytest.fixture
     def rubric_dict(self):
@@ -97,12 +98,14 @@ class TestSynthesisEndpoint:
         signal = make_valid_signal(debrief, "stat_reasoning")
         return make_synthesis_body(
             signals=[json.loads(signal.model_dump_json())],
-            debriefs=[{
-                "debrief_id": debrief.debrief_id,
-                "candidate_id": debrief.candidate_id,
-                "interviewer_name": debrief.interviewer_name,
-                "raw_text": debrief.raw_text,
-            }],
+            debriefs=[
+                {
+                    "debrief_id": debrief.debrief_id,
+                    "candidate_id": debrief.candidate_id,
+                    "interviewer_name": debrief.interviewer_name,
+                    "raw_text": debrief.raw_text,
+                }
+            ],
             rubric_dict=rubric_dict,
         )
 
@@ -128,7 +131,12 @@ class TestSynthesisEndpoint:
         data = client.post("/synthesize", json=valid_payload).json()
         summary = data["executive_summary"].lower()
         # Must not contain affirmative recommendation language
-        forbidden = ["recommend hiring", "recommend this candidate", "strong hire", "should be hired"]
+        forbidden = [
+            "recommend hiring",
+            "recommend this candidate",
+            "strong hire",
+            "should be hired",
+        ]
         assert not any(phrase in summary for phrase in forbidden)
 
     def test_competency_assessments_present(self, valid_payload):
@@ -177,12 +185,14 @@ class TestSynthesisEndpoint:
         )
         body = make_synthesis_body(
             signals=[json.loads(bad_signal.model_dump_json())],
-            debriefs=[{
-                "debrief_id": debrief.debrief_id,
-                "candidate_id": debrief.candidate_id,
-                "interviewer_name": debrief.interviewer_name,
-                "raw_text": debrief.raw_text,
-            }],
+            debriefs=[
+                {
+                    "debrief_id": debrief.debrief_id,
+                    "candidate_id": debrief.candidate_id,
+                    "interviewer_name": debrief.interviewer_name,
+                    "raw_text": debrief.raw_text,
+                }
+            ],
             rubric_dict=rubric_dict,
         )
         resp = client.post("/synthesize", json=body)
@@ -200,6 +210,7 @@ class TestSynthesisEndpoint:
 # PROMPT 12: Review workflow
 # ---------------------------------------------------------------------------
 
+
 class TestReviewWorkflow:
     @pytest.fixture
     def rubric_dict(self):
@@ -211,12 +222,14 @@ class TestReviewWorkflow:
         signal = make_valid_signal(debrief, "stat_reasoning")
         payload = make_synthesis_body(
             signals=[json.loads(signal.model_dump_json())],
-            debriefs=[{
-                "debrief_id": debrief.debrief_id,
-                "candidate_id": debrief.candidate_id,
-                "interviewer_name": debrief.interviewer_name,
-                "raw_text": debrief.raw_text,
-            }],
+            debriefs=[
+                {
+                    "debrief_id": debrief.debrief_id,
+                    "candidate_id": debrief.candidate_id,
+                    "interviewer_name": debrief.interviewer_name,
+                    "raw_text": debrief.raw_text,
+                }
+            ],
             rubric_dict=rubric_dict,
         )
         data = client.post("/synthesize", json=payload).json()
@@ -231,7 +244,10 @@ class TestReviewWorkflow:
         assert resp.status_code == 404
 
     def test_patch_reviewer_notes(self, report_id):
-        patch = {"final_reviewer_notes": "Strong candidate for data work.", "reviewer_name": "Sarah"}
+        patch = {
+            "final_reviewer_notes": "Strong candidate for data work.",
+            "reviewer_name": "Sarah",
+        }
         resp = client.patch(f"/review/{report_id}", json=patch)
         assert resp.status_code == 200
         data = resp.json()
@@ -259,8 +275,11 @@ class TestReviewWorkflow:
         assert data["final_reviewer_notes"] == ""
 
     def test_patch_is_idempotent(self, report_id):
-        patch = {"reviewer_name": "Sarah", "reviewer_approved": True,
-                 "final_reviewer_notes": "Looks good."}
+        patch = {
+            "reviewer_name": "Sarah",
+            "reviewer_approved": True,
+            "final_reviewer_notes": "Looks good.",
+        }
         client.patch(f"/review/{report_id}", json=patch)
         resp = client.patch(f"/review/{report_id}", json=patch)
         assert resp.status_code == 200

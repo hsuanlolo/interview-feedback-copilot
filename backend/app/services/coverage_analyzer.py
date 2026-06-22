@@ -21,7 +21,6 @@ Why "per debrief" not "per interviewer name"?
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
 
 from app.schemas.models import (
     Competency,
@@ -37,7 +36,7 @@ from app.schemas.models import (
 )
 
 
-def _interviewer_name(signal: ExtractedSignal, debrief_map: Dict[str, str]) -> str:
+def _interviewer_name(signal: ExtractedSignal, debrief_map: dict[str, str]) -> str:
     if signal.debrief_id in debrief_map:
         return debrief_map[signal.debrief_id]
     if signal.evidence_spans:
@@ -45,7 +44,7 @@ def _interviewer_name(signal: ExtractedSignal, debrief_map: Dict[str, str]) -> s
     return f"Interviewer-{signal.debrief_id[:6]}"
 
 
-def _dominant_signal_type(signals: List[ExtractedSignal]) -> SignalType:
+def _dominant_signal_type(signals: list[ExtractedSignal]) -> SignalType:
     """Return the dominant direction across a list of signals from one debrief."""
     types = [s.signal_type for s in signals]
     if SignalType.POSITIVE in types and SignalType.NEGATIVE in types:
@@ -59,7 +58,7 @@ def _dominant_signal_type(signals: List[ExtractedSignal]) -> SignalType:
     return SignalType.UNCLEAR
 
 
-def _coverage_status(assessments: List[InterviewerAssessment]) -> CoverageStatus:
+def _coverage_status(assessments: list[InterviewerAssessment]) -> CoverageStatus:
     if not assessments:
         return CoverageStatus.NOT_COVERED
     if len(assessments) == 1:
@@ -81,21 +80,21 @@ def _suggested_followup(competency: Competency, status: CoverageStatus) -> str:
     name = competency.name.lower()
     if status == CoverageStatus.NOT_COVERED:
         return (
-            f'No interviewer assessed {competency.name}. '
+            f"No interviewer assessed {competency.name}. "
             f'Suggested question: "Can you describe a situation where you demonstrated {name}?"'
         )
     if status == CoverageStatus.PARTIAL:
         return (
-            f'{competency.name} was assessed by only one interviewer. '
-            'A second opinion would strengthen or challenge this single data point.'
+            f"{competency.name} was assessed by only one interviewer. "
+            "A second opinion would strengthen or challenge this single data point."
         )
     return ""
 
 
 def analyze_coverage(
-    signals: List[ExtractedSignal],
+    signals: list[ExtractedSignal],
     rubric: RoleRubric,
-    debriefs: Optional[List[InterviewDebrief]] = None,
+    debriefs: list[InterviewDebrief] | None = None,
 ) -> CoverageMapResponse:
     """
     Build a coverage map for all competencies in the rubric.
@@ -107,8 +106,8 @@ def analyze_coverage(
     debriefs: Optional list of source debriefs for accurate interviewer name lookup.
     """
     # Build debrief_id → interviewer_name lookup
-    debrief_map: Dict[str, str] = {}
-    all_interviewers: List[str] = []
+    debrief_map: dict[str, str] = {}
+    all_interviewers: list[str] = []
     if debriefs:
         for d in debriefs:
             debrief_map[d.debrief_id] = d.interviewer_name
@@ -117,7 +116,7 @@ def analyze_coverage(
 
     # Group signals by (competency_id, debrief_id)
     # comp_id → debrief_id → [signals]
-    grouped: Dict[str, Dict[str, List[ExtractedSignal]]] = defaultdict(lambda: defaultdict(list))
+    grouped: dict[str, dict[str, list[ExtractedSignal]]] = defaultdict(lambda: defaultdict(list))
     for signal in signals:
         grouped[signal.competency_id][signal.debrief_id].append(signal)
 
@@ -130,8 +129,8 @@ def analyze_coverage(
                 all_interviewers.append(name)
                 seen.add(name)
 
-    competency_assessments: List[CompetencyAssessment] = []
-    coverage_gaps: List[CoverageGap] = []
+    competency_assessments: list[CompetencyAssessment] = []
+    coverage_gaps: list[CoverageGap] = []
     covered_required = 0
     total_required = 0
 
@@ -143,10 +142,10 @@ def analyze_coverage(
         debrief_signals = grouped.get(cid, {})
 
         # Build one InterviewerAssessment per debrief
-        assessments: List[InterviewerAssessment] = []
-        positive_evidence: List[ExtractedSignal] = []
-        negative_evidence: List[ExtractedSignal] = []
-        vague_claims: List[ExtractedSignal] = []
+        assessments: list[InterviewerAssessment] = []
+        positive_evidence: list[ExtractedSignal] = []
+        negative_evidence: list[ExtractedSignal] = []
+        vague_claims: list[ExtractedSignal] = []
 
         for debrief_id, sigs in debrief_signals.items():
             name = _interviewer_name(sigs[0], debrief_map)
@@ -173,7 +172,10 @@ def analyze_coverage(
 
         status = _coverage_status(assessments)
 
-        if competency.required and status not in (CoverageStatus.NOT_COVERED, CoverageStatus.PARTIAL):
+        if competency.required and status not in (
+            CoverageStatus.NOT_COVERED,
+            CoverageStatus.PARTIAL,
+        ):
             covered_required += 1
 
         competency_assessments.append(

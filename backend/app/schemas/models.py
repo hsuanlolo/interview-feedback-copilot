@@ -13,19 +13,17 @@ Design rules:
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
-from typing import Optional
+from enum import StrEnum
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-
 
 # ---------------------------------------------------------------------------
 # Enumerations
 # ---------------------------------------------------------------------------
 
 
-class SignalType(str, Enum):
+class SignalType(StrEnum):
     """Direction of an extracted competency signal."""
 
     POSITIVE = "positive"
@@ -34,20 +32,20 @@ class SignalType(str, Enum):
     UNCLEAR = "unclear"
 
 
-class DisagreementSeverity(str, Enum):
+class DisagreementSeverity(StrEnum):
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
 
 
-class DisagreementType(str, Enum):
+class DisagreementType(StrEnum):
     DIRECTION_CONFLICT = "direction_conflict"  # one positive, one negative
     SCORE_GAP = "score_gap"  # numeric scores differ significantly
     EVIDENCE_ABSENT = "evidence_absent"  # strong claim with no supporting evidence
     SCALE_MISMATCH = "score_text_mismatch"  # high score paired with negative narrative
 
 
-class CoverageStatus(str, Enum):
+class CoverageStatus(StrEnum):
     STRONG = "strong"  # assessed by ≥2 interviewers, at least one positive
     PARTIAL = "partial"  # assessed by 1 interviewer
     NOT_COVERED = "not_covered"  # no interviewer assessed this competency
@@ -127,7 +125,7 @@ class InterviewDebrief(BaseModel):
     word_count: int = Field(0, description="Computed on ingest")
 
     @model_validator(mode="after")
-    def compute_word_count(self) -> "InterviewDebrief":
+    def compute_word_count(self) -> InterviewDebrief:
         self.word_count = len(self.raw_text.split())
         return self
 
@@ -153,19 +151,18 @@ class EvidenceSpan(BaseModel):
     quoted_text: str = Field(..., min_length=5, description="Verbatim text from the debrief")
 
     @model_validator(mode="after")
-    def end_after_start(self) -> "EvidenceSpan":
+    def end_after_start(self) -> EvidenceSpan:
         if self.end_char <= self.start_char:
             raise ValueError(f"end_char ({self.end_char}) must be > start_char ({self.start_char})")
         return self
 
     @model_validator(mode="after")
-    def span_matches_quoted_text(self) -> "EvidenceSpan":
+    def span_matches_quoted_text(self) -> EvidenceSpan:
         expected_len = self.end_char - self.start_char
         if abs(expected_len - len(self.quoted_text)) > 5:
             # Allow small tolerance for whitespace normalization
             raise ValueError(
-                f"quoted_text length ({len(self.quoted_text)}) does not match "
-                f"span length ({expected_len})"
+                f"quoted_text length ({len(self.quoted_text)}) does not match span length ({expected_len})"
             )
         return self
 
@@ -188,9 +185,7 @@ class ExtractedSignal(BaseModel):
     competency_id: str
     signal_type: SignalType
     claim: str = Field(..., min_length=5, description="The substantive takeaway in one sentence")
-    evidence_spans: list[EvidenceSpan] = Field(
-        ..., min_length=1, description="Must have at least one supporting span"
-    )
+    evidence_spans: list[EvidenceSpan] = Field(..., min_length=1, description="Must have at least one supporting span")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Extractor confidence in this signal")
     is_vague: bool = Field(False, description="True if the claim lacks specificity")
     is_unsupported: bool = Field(False, description="True if claim could not be grounded in span")
@@ -247,9 +242,7 @@ class DisagreementFlag(BaseModel):
     description: str = Field(..., description="Plain-English description of the conflict")
     interviewer_names: list[str]
     supporting_evidence_spans: list[EvidenceSpan]
-    resolution_suggestion: str = Field(
-        "", description="Suggested follow-up question or area to probe"
-    )
+    resolution_suggestion: str = Field("", description="Suggested follow-up question or area to probe")
 
 
 # ---------------------------------------------------------------------------
@@ -291,9 +284,7 @@ class SynthesisReport(BaseModel):
     role_title: str
 
     # Content
-    executive_summary: str = Field(
-        ..., description="3–5 sentence overview of evidence quality and key themes"
-    )
+    executive_summary: str = Field(..., description="3–5 sentence overview of evidence quality and key themes")
     competency_assessments: list[CompetencyAssessment]
     disagreement_flags: list[DisagreementFlag]
     coverage_gaps: list[CoverageGap]
@@ -307,17 +298,13 @@ class SynthesisReport(BaseModel):
     total_signals_extracted: int
     unsupported_claim_count: int = 0
     vague_claim_count: int = 0
-    citation_validity_rate: float = Field(
-        1.0, ge=0.0, le=1.0, description="Share of evidence spans verified as valid"
-    )
+    citation_validity_rate: float = Field(1.0, ge=0.0, le=1.0, description="Share of evidence spans verified as valid")
 
     # Human review fields
-    final_reviewer_notes: str = Field(
-        "", description="Reviewer's additions, corrections, and conclusions"
-    )
+    final_reviewer_notes: str = Field("", description="Reviewer's additions, corrections, and conclusions")
     reviewer_approved: bool = False
     reviewer_name: str = ""
-    reviewed_at: Optional[datetime] = None
+    reviewed_at: datetime | None = None
 
     # Provenance
     created_at: datetime = Field(default_factory=datetime.utcnow)

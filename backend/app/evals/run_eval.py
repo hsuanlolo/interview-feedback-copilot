@@ -17,7 +17,6 @@ import json
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 # Make sure backend root is importable when run directly
 sys.path.insert(0, str(Path(__file__).parents[2]))
@@ -35,6 +34,7 @@ SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
 # Result data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MetricResult:
     name: str
@@ -48,10 +48,10 @@ class MetricResult:
 class EvalResult:
     gold_id: str
     candidate_id: str
-    metrics: List[MetricResult]
+    metrics: list[MetricResult]
     all_pass: bool
 
-    def summary_lines(self) -> List[str]:
+    def summary_lines(self) -> list[str]:
         lines = [f"  Gold: {self.gold_id}  Candidate: {self.candidate_id}"]
         for m in self.metrics:
             status = "PASS" if m.passes else "FAIL"
@@ -64,6 +64,7 @@ class EvalResult:
 # ---------------------------------------------------------------------------
 # Individual metric computations
 # ---------------------------------------------------------------------------
+
 
 def _citation_validity(signals, debriefs) -> MetricResult:
     result = verifier.verify(signals, debriefs)
@@ -128,10 +129,7 @@ def _coverage_completeness(coverage_map, gold_coverage_gaps) -> MetricResult:
             detail="no gold coverage gaps to check",
         )
     # Build lookup: competency_id → coverage_status from computed map
-    status_by_cid: Dict[str, str] = {
-        ca.competency_id: ca.coverage_status
-        for ca in coverage_map.competency_assessments
-    }
+    status_by_cid: dict[str, str] = {ca.competency_id: ca.coverage_status for ca in coverage_map.competency_assessments}
     caught = 0
     for gap in gold_coverage_gaps:
         cid = gap["competency_id"]
@@ -163,8 +161,7 @@ def _omission_rate(signals, gold_concerns) -> MetricResult:
         )
     # Check whether each concern's verbatim phrase (or competency) appears in signals
     signal_text = " ".join(
-        (s.claim + " " + " ".join(span.quoted_text for span in s.evidence_spans)).lower()
-        for s in signals
+        (s.claim + " " + " ".join(span.quoted_text for span in s.evidence_spans)).lower() for s in signals
     )
     signal_cids = {s.competency_id for s in signals}
     missed = 0
@@ -200,10 +197,41 @@ def _faithfulness(signals, debriefs) -> MetricResult:
             passes=True,
             detail="no signals to check",
         )
-    STOP = {"the", "a", "an", "is", "was", "were", "has", "have", "had", "it",
-            "they", "their", "this", "that", "and", "or", "of", "in", "to",
-            "for", "with", "on", "at", "from", "by", "about", "candidate",
-            "demonstrated", "showed", "exhibited", "showed", "the", "some"}
+    STOP = {
+        "the",
+        "a",
+        "an",
+        "is",
+        "was",
+        "were",
+        "has",
+        "have",
+        "had",
+        "it",
+        "they",
+        "their",
+        "this",
+        "that",
+        "and",
+        "or",
+        "of",
+        "in",
+        "to",
+        "for",
+        "with",
+        "on",
+        "at",
+        "from",
+        "by",
+        "about",
+        "candidate",
+        "demonstrated",
+        "showed",
+        "exhibited",
+        "showed",
+        "the",
+        "some",
+    }
     faithful_count = 0
     for signal in signals:
         if not signal.evidence_spans:
@@ -239,19 +267,22 @@ def _faithfulness(signals, debriefs) -> MetricResult:
 # Per-gold-record evaluation
 # ---------------------------------------------------------------------------
 
-def _load_debriefs_for_gold(gold: dict) -> List[InterviewDebrief]:
+
+def _load_debriefs_for_gold(gold: dict) -> list[InterviewDebrief]:
     debrief_dir = SAMPLE_DIR / "debriefs"
-    debriefs: List[InterviewDebrief] = []
+    debriefs: list[InterviewDebrief] = []
     for filename in gold["debrief_files"]:
         path = debrief_dir / filename
         if not path.exists():
             print(f"  WARNING: debrief file not found: {path}", file=sys.stderr)
             continue
-        debriefs.append(InterviewDebrief(
-            candidate_id=gold["candidate_id"],
-            interviewer_name=_parse_interviewer_name(path.read_text()),
-            raw_text=path.read_text(),
-        ))
+        debriefs.append(
+            InterviewDebrief(
+                candidate_id=gold["candidate_id"],
+                interviewer_name=_parse_interviewer_name(path.read_text()),
+                raw_text=path.read_text(),
+            )
+        )
     return debriefs
 
 
@@ -262,7 +293,7 @@ def _parse_interviewer_name(text: str) -> str:
     return "Unknown"
 
 
-def _load_rubric_for_gold(gold: dict) -> Optional[RoleRubric]:
+def _load_rubric_for_gold(gold: dict) -> RoleRubric | None:
     rubric_path = SAMPLE_DIR / "rubrics" / "data_scientist_rubric.json"
     if not rubric_path.exists():
         return None
@@ -315,7 +346,8 @@ def eval_gold_record(gold: dict) -> EvalResult:
 # Entry point
 # ---------------------------------------------------------------------------
 
-def run_eval(gold_dir: Path, output_path: Optional[Path]) -> bool:
+
+def run_eval(gold_dir: Path, output_path: Path | None) -> bool:
     gold_files = sorted(gold_dir.glob("*.json"))
     if not gold_files:
         print(f"No gold files found in {gold_dir}", file=sys.stderr)
@@ -323,7 +355,7 @@ def run_eval(gold_dir: Path, output_path: Optional[Path]) -> bool:
 
     print(f"Found {len(gold_files)} gold file(s) in {gold_dir}")
 
-    results: List[EvalResult] = []
+    results: list[EvalResult] = []
     for gf in gold_files:
         gold = json.loads(gf.read_text())
         result = eval_gold_record(gold)
