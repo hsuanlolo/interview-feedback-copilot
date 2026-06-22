@@ -123,11 +123,16 @@ export default function AnalyzePage() {
 
   function handleAddDebrief() {
     if (!newInterviewerName.trim() || !newDebriefText.trim()) return;
+    const text = newDebriefText.trim();
     const debrief: InterviewDebrief = {
       debrief_id: crypto.randomUUID(),
       candidate_id: candidateName.trim() || 'candidate',
       interviewer_name: newInterviewerName.trim(),
-      raw_text: newDebriefText.trim(),
+      round_name: '',
+      interview_date: new Date().toISOString().split('T')[0],
+      raw_text: text,
+      score_raw: '',
+      word_count: text.split(/\s+/).filter(Boolean).length,
     };
     setDebriefs(prev => [...prev, debrief]);
     setNewInterviewerName('');
