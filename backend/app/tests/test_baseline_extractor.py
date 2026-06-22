@@ -12,6 +12,7 @@ Run with: pytest app/tests/test_baseline_extractor.py -v
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -488,6 +489,10 @@ class TestExtractBaselineEndpoint:
         response = client.post("/extract/baseline", json=body)
         assert response.status_code == 400
 
+    @pytest.mark.skipif(
+        os.environ.get("LLM_MOCK_MODE") == "true",
+        reason="Mock mode doesn't require an API key so 503 is not returned",
+    )
     def test_llm_endpoint_returns_503_without_api_key(self, sample_rubric, sample_debrief_text):
         # PROMPT 6 implemented /extract/llm. Without an API key it returns 503, not 501.
         body = self._build_request_body(sample_rubric, sample_debrief_text)

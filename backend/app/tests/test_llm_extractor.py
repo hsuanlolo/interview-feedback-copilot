@@ -18,6 +18,7 @@ Run with: pytest app/tests/test_llm_extractor.py -v
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -432,6 +433,10 @@ class TestExtractLLMEndpoint:
 
 
 class TestGetLLMClientFactory:
+    @pytest.mark.skipif(
+        os.environ.get("LLM_MOCK_MODE") == "true",
+        reason="Mock mode bypasses the API key check so 503 is not returned",
+    )
     def test_returns_503_when_no_api_key_and_not_mock_mode(self):
         """Without override: no API key configured, mock mode off → 503."""
         from app.config import settings
