@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type {
   CoverageMapResponse,
   DisagreementsResponse,
@@ -115,23 +115,18 @@ export default function AnalyzePage() {
   const [selectedRubricId, setSelectedRubricId] = useState('');
   const [rubricJson, setRubricJson] = useState('');
   const [rubricJsonError, setRubricJsonError] = useState<string | null>(null);
-  const [rubricListLoaded, setRubricListLoaded] = useState(false);
 
-  async function handleOpenRubricPicker() {
-    if (rubricListLoaded) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await listRubrics();
-      setRubricList(list);
-      if (list.length > 0) setSelectedRubricId(list[0].rubric_id);
-      setRubricListLoaded(true);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }
+
+  useEffect(() => {
+    listRubrics()
+      .then((list) => {
+        setRubricList(list);
+        if (list.length > 0) setSelectedRubricId(list[0].rubric_id);
+      })
+      .catch(() => {
+        // non-fatal: user will see empty dropdown and can retry via Load Rubric
+      });
+  }, []);
 
   async function handleLoadRubric() {
     if (!selectedRubricId) return;
@@ -181,15 +176,29 @@ export default function AnalyzePage() {
     setNewDebriefText('');
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
+
+    if (file.name.endsWith('.docx')) {
+      try {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        setNewDebriefText(result.value);
+      } catch {
+        setError('Could not read .docx file. Try saving it as .txt first.');
+      }
+      return;
+    }
+
+    // plain text / markdown
     const reader = new FileReader();
     reader.onload = (ev) => {
       setNewDebriefText((ev.target?.result as string) ?? '');
     };
     reader.readAsText(file);
-    e.target.value = '';
   }
 
   function handleRemoveDebrief(id: string) {
@@ -364,12 +373,11 @@ export default function AnalyzePage() {
             <div className="flex gap-2">
               <select
                 value={selectedRubricId}
-                onFocus={handleOpenRubricPicker}
                 onChange={(e) => setSelectedRubricId(e.target.value)}
                 className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white"
               >
                 {rubricList.length === 0 && (
-                  <option value="">— click to load roles —</option>
+                  <option value="">— loading roles… —</option>
                 )}
                 {rubricList.map((r) => (
                   <option key={r.rubric_id} value={r.rubric_id}>
@@ -444,7 +452,7 @@ export default function AnalyzePage() {
             <div>
               <h3 className="text-sm font-medium text-slate-800">Option B — Add Your Own Debriefs</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Paste text or upload a .txt file for each interviewer. Add one at a time.
+                Paste text or upload a .txt / .docx file for each interviewer. Add one at a time.
               </p>
             </div>
 
@@ -473,8 +481,8 @@ export default function AnalyzePage() {
 
               <div className="flex items-center gap-3">
                 <label className="cursor-pointer text-xs text-slate-600 underline underline-offset-2 hover:text-slate-900">
-                  Upload .txt file
-                  <input type="file" accept=".txt,.md" onChange={handleFileUpload} className="hidden" />
+                  Upload .txt or .docx
+                  <input type="file" accept=".txt,.md,.docx" onChange={handleFileUpload} className="hidden" />
                 </label>
                 <span className="text-slate-300 text-xs">or paste above</span>
                 <div className="flex-1" />
