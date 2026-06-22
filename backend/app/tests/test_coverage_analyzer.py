@@ -23,7 +23,7 @@ from app.services.coverage_analyzer import analyze_coverage
 from app.services.store import store
 
 client = TestClient(app)
-SAMPLE_DIR = Path(__file__).parents[3] / "sample_data"
+SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
 
 
 @pytest.fixture(autouse=True)

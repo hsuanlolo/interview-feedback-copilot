@@ -21,9 +21,9 @@ router = APIRouter(prefix="/rubrics", tags=["rubrics"])
 
 # Resolve sample_data relative to this file's location.
 # __file__ is backend/app/routers/rubrics.py
-# parents[3] is the project root (interview-feedback-copilot/)
+# parents[2] is the project root (interview-feedback-copilot/)
 _SAMPLE_RUBRIC_PATH = (
-    Path(__file__).parents[3] / "sample_data" / "rubrics" / "data_scientist_rubric.json"
+    Path(__file__).parents[2] / "sample_data" / "rubrics" / "data_scientist_rubric.json"
 )
 
 

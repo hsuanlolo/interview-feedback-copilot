@@ -25,7 +25,7 @@ from app.services.disagreement_detector import detect_disagreements
 from app.services.store import store
 
 client = TestClient(app)
-SAMPLE_DIR = Path(__file__).parents[3] / "sample_data"
+SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
 
 
 @pytest.fixture(autouse=True)

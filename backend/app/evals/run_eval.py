@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 # Make sure backend root is importable when run directly
-sys.path.insert(0, str(Path(__file__).parents[3]))
+sys.path.insert(0, str(Path(__file__).parents[2]))
 
 from app.schemas.models import InterviewDebrief, RoleRubric
 from app.services.baseline_extractor import extract_all_baseline
@@ -28,7 +28,7 @@ from app.services.coverage_analyzer import analyze_coverage
 from app.services.disagreement_detector import detect_disagreements
 from app.services.evidence_verifier import verifier
 
-SAMPLE_DIR = Path(__file__).parents[3] / "sample_data"
+SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
 
 
 # ---------------------------------------------------------------------------

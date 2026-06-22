@@ -19,7 +19,7 @@ from app.schemas.models import InterviewDebrief
 
 router = APIRouter(prefix="/debriefs", tags=["debriefs"])
 
-_DEBRIEF_DIR = Path(__file__).parents[3] / "sample_data" / "debriefs"
+_DEBRIEF_DIR = Path(__file__).parents[2] / "sample_data" / "debriefs"
 
 
 def _parse_debrief_file(text: str, filename: str) -> InterviewDebrief:

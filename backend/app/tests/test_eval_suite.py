@@ -9,7 +9,7 @@ import pytest
 
 from app.evals.run_eval import run_eval
 
-SAMPLE_DIR = Path(__file__).parents[3] / "sample_data"
+SAMPLE_DIR = Path(__file__).parents[2] / "sample_data"
 GOLD_DIR = SAMPLE_DIR / "gold"
 
 
