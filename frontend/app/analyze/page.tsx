@@ -104,6 +104,38 @@ export default function AnalyzePage() {
   const [reviewerApproved, setReviewerApproved] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
+  // Add-debrief form state
+  const [newInterviewerName, setNewInterviewerName] = useState('');
+  const [newDebriefText, setNewDebriefText] = useState('');
+
+  function handleAddDebrief() {
+    if (!newInterviewerName.trim() || !newDebriefText.trim()) return;
+    const debrief: InterviewDebrief = {
+      debrief_id: crypto.randomUUID(),
+      candidate_id: candidateName.trim() || 'candidate',
+      interviewer_name: newInterviewerName.trim(),
+      raw_text: newDebriefText.trim(),
+    };
+    setDebriefs(prev => [...prev, debrief]);
+    setNewInterviewerName('');
+    setNewDebriefText('');
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setNewDebriefText((ev.target?.result as string) ?? '');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  function handleRemoveDebrief(id: string) {
+    setDebriefs(prev => prev.filter(d => d.debrief_id !== id));
+  }
+
   async function handleLoadSampleData() {
     setLoading(true);
     setError(null);
@@ -261,12 +293,13 @@ export default function AnalyzePage() {
             </div>
           </div>
 
+          {/* ── Option A: Sample Data ───────────────────────────── */}
           <div className="border border-slate-200 rounded-lg p-4 bg-white space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-slate-800">Sample Data</h3>
+                <h3 className="text-sm font-medium text-slate-800">Option A — Load Sample Data</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Load a synthetic Data Scientist rubric with 3 debrief files.
+                  Synthetic Data Scientist rubric with 3 pre-written debriefs. First load may take ~60s (server cold start).
                 </p>
               </div>
               <button
@@ -275,7 +308,7 @@ export default function AnalyzePage() {
                 className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
               >
                 {loading && <Spinner />}
-                {rubric ? 'Reload Sample' : 'Load Sample Data'}
+                {rubric ? 'Reload Sample' : 'Load Sample'}
               </button>
             </div>
 
@@ -285,9 +318,80 @@ export default function AnalyzePage() {
                   Rubric: {rubric.role_title} ({rubric.competencies.length} competencies)
                 </p>
                 <p className="text-emerald-700">
-                  Debriefs: {debriefs.length} files loaded (
-                  {debriefs.map((d) => d.interviewer_name).join(', ')})
+                  Debriefs: {debriefs.length} loaded ({debriefs.map((d) => d.interviewer_name).join(', ')})
                 </p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Option B: Add Your Own Debriefs ─────────────────── */}
+          <div className="border border-slate-200 rounded-lg p-4 bg-white space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-slate-800">Option B — Add Your Own Debriefs</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Paste text or upload a .txt file for each interviewer. Add one at a time.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Interviewer Name</label>
+                <input
+                  type="text"
+                  value={newInterviewerName}
+                  onChange={(e) => setNewInterviewerName(e.target.value)}
+                  placeholder="e.g. Sarah Chen"
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Debrief Text</label>
+                <textarea
+                  value={newDebriefText}
+                  onChange={(e) => setNewDebriefText(e.target.value)}
+                  placeholder="Paste the debrief notes here..."
+                  rows={5}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 resize-y font-mono"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer text-xs text-slate-600 underline underline-offset-2 hover:text-slate-900">
+                  Upload .txt file
+                  <input type="file" accept=".txt,.md" onChange={handleFileUpload} className="hidden" />
+                </label>
+                <span className="text-slate-300 text-xs">or paste above</span>
+                <div className="flex-1" />
+                <button
+                  onClick={handleAddDebrief}
+                  disabled={!newInterviewerName.trim() || !newDebriefText.trim()}
+                  className="px-4 py-1.5 bg-slate-800 text-white text-xs rounded-lg hover:bg-slate-700 disabled:opacity-40 transition-colors"
+                >
+                  Add Debrief
+                </button>
+              </div>
+            </div>
+
+            {debriefs.length > 0 && (
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                <p className="text-xs text-slate-500 font-medium">Added debriefs ({debriefs.length})</p>
+                {debriefs.map((d) => (
+                  <div key={d.debrief_id} className="flex items-center justify-between bg-slate-50 rounded-md px-3 py-2">
+                    <div>
+                      <span className="text-xs font-medium text-slate-700">{d.interviewer_name}</span>
+                      <span className="text-xs text-slate-400 ml-2">
+                        {d.raw_text.length.toLocaleString()} chars
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveDebrief(d.debrief_id)}
+                      className="text-xs text-red-400 hover:text-red-600"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
