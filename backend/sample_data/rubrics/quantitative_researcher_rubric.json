@@ -1,0 +1,124 @@
+{
+  "rubric_id": "rubric-qr-001",
+  "role_title": "Quantitative Researcher",
+  "role_level": "Senior IC",
+  "department": "Research",
+  "competencies": [
+    {
+      "competency_id": "statistical_reasoning",
+      "name": "Statistical Reasoning",
+      "description": "Applies statistical methods correctly; understands uncertainty quantification; draws sound inferences from data; identifies flaws in study design.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "correctly identifies sources of bias without prompting",
+        "quantifies uncertainty using confidence intervals or credible intervals",
+        "distinguishes between statistical and practical significance",
+        "identifies assumptions of a test and checks whether they hold",
+        "proactively mentions confounders or selection effects"
+      ],
+      "negative_indicators": [
+        "conflates p-value with probability that the null is true",
+        "cannot explain what a confidence interval means",
+        "over-claims certainty from observational data",
+        "ignores multiple comparisons when relevant"
+      ]
+    },
+    {
+      "competency_id": "research_methodology",
+      "name": "Research Methodology & Design",
+      "description": "Designs rigorous studies; selects appropriate methods for the research question; anticipates threats to validity; pre-registers or documents hypotheses before data collection.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "defines the estimand precisely before choosing a method",
+        "discusses internal and external validity",
+        "performs power calculation before collecting data",
+        "identifies potential confounders in study design",
+        "discusses pre-registration or hypothesis documentation"
+      ],
+      "negative_indicators": [
+        "selects a method before defining the research question clearly",
+        "ignores external validity of findings",
+        "does not discuss sample size justification",
+        "cannot explain what p-hacking or HARKing is"
+      ]
+    },
+    {
+      "competency_id": "model_development",
+      "name": "Model Development & Validation",
+      "description": "Builds mathematical or statistical models for real-world phenomena; validates models against empirical data; understands when models break down.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "starts with a simple baseline before adding complexity",
+        "validates model assumptions with diagnostic checks",
+        "discusses where the model is likely to fail",
+        "compares model predictions to out-of-sample data",
+        "interprets model parameters with domain context"
+      ],
+      "negative_indicators": [
+        "skips baseline models and jumps to complex approaches",
+        "cannot describe how to validate model assumptions",
+        "presents model output without discussing limitations",
+        "conflates model fit on training data with predictive performance"
+      ]
+    },
+    {
+      "competency_id": "critical_thinking",
+      "name": "Critical Thinking & Assumptions",
+      "description": "Challenges assumptions explicitly; evaluates evidence critically; identifies logical gaps; updates beliefs when presented with new data.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "states assumptions explicitly before building on them",
+        "challenges their own conclusions when probed",
+        "identifies alternative explanations for observed effects",
+        "updates position clearly when given contrary evidence"
+      ],
+      "negative_indicators": [
+        "makes hidden assumptions without stating them",
+        "defends a position without engaging with counter-evidence",
+        "cannot identify what would falsify their hypothesis",
+        "treats correlation as confirmation of a causal hypothesis"
+      ]
+    },
+    {
+      "competency_id": "communication",
+      "name": "Communication of Quantitative Work",
+      "description": "Explains complex statistical results to mixed audiences; uses visualizations effectively; communicates uncertainty honestly; writes clear technical reports.",
+      "required": true,
+      "weight": 1.25,
+      "positive_indicators": [
+        "explains statistical results in plain language without losing precision",
+        "uses concrete examples and analogies for abstract concepts",
+        "represents uncertainty visually, not just as numbers",
+        "leads with the conclusion and business implication"
+      ],
+      "negative_indicators": [
+        "buries the main finding in technical details",
+        "reports point estimates without uncertainty ranges",
+        "cannot simplify for a non-technical executive audience",
+        "uses jargon without checking whether the audience follows"
+      ]
+    },
+    {
+      "competency_id": "domain_knowledge",
+      "name": "Domain Knowledge & Literature",
+      "description": "Aware of relevant prior work; understands domain-specific data generation processes; can contextualize findings within the broader research landscape.",
+      "required": false,
+      "weight": 1.0,
+      "positive_indicators": [
+        "references relevant prior work and situates their approach",
+        "understands how the data was generated and what biases that introduces",
+        "identifies domain-specific pitfalls in applying standard methods"
+      ],
+      "negative_indicators": [
+        "applies methods without awareness of domain-specific constraints",
+        "unaware of relevant literature when asked",
+        "ignores how data collection process affects analysis"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

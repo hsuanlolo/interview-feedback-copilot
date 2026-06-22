@@ -1,0 +1,122 @@
+{
+  "rubric_id": "rubric-de-001",
+  "role_title": "Data Engineer",
+  "role_level": "Senior IC",
+  "department": "Data Platform",
+  "competencies": [
+    {
+      "competency_id": "pipeline_design",
+      "name": "Data Pipeline Design",
+      "description": "Designs reliable, scalable, and maintainable data pipelines; understands batch vs. streaming tradeoffs; handles failures gracefully with idempotency and retries.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "distinguishes batch and streaming with appropriate use cases",
+        "discusses idempotency and how to achieve it",
+        "handles late-arriving data and out-of-order events",
+        "designs for failure with retries, dead-letter queues, and alerting",
+        "thinks about pipeline observability from the start"
+      ],
+      "negative_indicators": [
+        "cannot explain when to use streaming vs. batch",
+        "pipeline design has no error handling or retry logic",
+        "does not consider late data or partial failures",
+        "has not thought about monitoring pipeline health"
+      ]
+    },
+    {
+      "competency_id": "data_modeling",
+      "name": "Data Modeling & Schema Design",
+      "description": "Designs schemas that serve analytical and operational needs; understands normalization, star/snowflake schemas, and partitioning strategies.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "explains when to denormalize for analytical performance",
+        "designs partitioning strategy based on query patterns",
+        "discusses slowly changing dimensions and history tracking",
+        "considers schema evolution and backward compatibility"
+      ],
+      "negative_indicators": [
+        "applies OLTP normalization rules to analytical workloads",
+        "does not consider partitioning or clustering",
+        "ignores how the schema will evolve over time",
+        "cannot explain the difference between star and snowflake schemas"
+      ]
+    },
+    {
+      "competency_id": "performance",
+      "name": "Performance & Scalability",
+      "description": "Optimizes queries and pipelines for scale; understands distributed computing tradeoffs; identifies bottlenecks and resolves them.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "explains query plan analysis and how to interpret it",
+        "identifies data skew as a common distributed bottleneck",
+        "discusses caching, materialization, and pre-aggregation strategies",
+        "benchmarks before optimizing rather than guessing"
+      ],
+      "negative_indicators": [
+        "optimizes without measuring first",
+        "cannot explain what a shuffle is or why it is expensive",
+        "does not consider data distribution in distributed jobs",
+        "cannot read or interpret a query execution plan"
+      ]
+    },
+    {
+      "competency_id": "data_quality",
+      "name": "Data Quality & Reliability",
+      "description": "Implements data validation; detects anomalies and schema drift; ensures SLAs on data freshness and completeness; treats data quality as a first-class concern.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "defines data quality checks at ingestion, transformation, and serving",
+        "discusses how to detect and alert on schema changes",
+        "handles null, duplicate, and out-of-range values explicitly",
+        "sets freshness SLAs and monitors against them"
+      ],
+      "negative_indicators": [
+        "treats data quality as a downstream consumer's problem",
+        "has no strategy for detecting silent data failures",
+        "no mention of null handling or deduplication",
+        "cannot describe how they would set a data freshness SLA"
+      ]
+    },
+    {
+      "competency_id": "tool_judgment",
+      "name": "Tool & Technology Judgment",
+      "description": "Selects tools appropriate to the problem scale and team context; understands tradeoffs between Spark, Flink, dbt, Airflow, Kafka, and cloud-native alternatives.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "selects tools based on the problem, not familiarity",
+        "explains what a tool is bad at, not just good at",
+        "mentions operational overhead as a factor in tool selection",
+        "can name the key tradeoff between two competing tools"
+      ],
+      "negative_indicators": [
+        "recommends only tools they have used before",
+        "cannot articulate weaknesses of their preferred tools",
+        "ignores operational cost and maintenance burden",
+        "cannot compare two tools in the same category"
+      ]
+    },
+    {
+      "competency_id": "stakeholder_collaboration",
+      "name": "Stakeholder Collaboration",
+      "description": "Works with analysts, scientists, and PMs to understand data needs; translates business requirements into data models; communicates data limitations clearly.",
+      "required": false,
+      "weight": 0.75,
+      "positive_indicators": [
+        "describes how they gather data requirements from non-engineers",
+        "communicates data limitations and caveats to downstream users",
+        "proactively flags when a data request is ambiguous"
+      ],
+      "negative_indicators": [
+        "builds what was asked without validating the underlying need",
+        "does not communicate data quality issues to consumers",
+        "treats data modeling as purely a technical decision"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

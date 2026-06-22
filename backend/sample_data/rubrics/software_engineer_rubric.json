@@ -1,0 +1,126 @@
+{
+  "rubric_id": "rubric-swe-001",
+  "role_title": "Software Engineer",
+  "role_level": "Senior IC",
+  "department": "Engineering",
+  "competencies": [
+    {
+      "competency_id": "problem_solving",
+      "name": "Technical Problem Solving",
+      "description": "Breaks down complex problems systematically; considers multiple approaches; arrives at correct solutions; handles edge cases proactively.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "clarifies requirements before coding",
+        "states approach before implementing",
+        "considers time and space complexity",
+        "handles edge cases without prompting",
+        "backtracks and corrects approach when stuck"
+      ],
+      "negative_indicators": [
+        "jumps to code without understanding the problem",
+        "ignores edge cases unless explicitly asked",
+        "cannot explain why an approach was chosen",
+        "freezes or gives up when the first approach fails"
+      ]
+    },
+    {
+      "competency_id": "code_quality",
+      "name": "Code Quality & Design",
+      "description": "Writes readable, maintainable, testable code; names variables and functions clearly; avoids unnecessary complexity; structures code for future modification.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "uses descriptive variable and function names",
+        "writes modular functions with a single responsibility",
+        "anticipates where code may need to change",
+        "mentions testing strategy unprompted",
+        "avoids premature optimization and over-engineering"
+      ],
+      "negative_indicators": [
+        "writes long functions that do too many things",
+        "uses cryptic naming or no naming conventions",
+        "cannot explain why a particular structure was chosen",
+        "no mention of testing or error handling"
+      ]
+    },
+    {
+      "competency_id": "system_design",
+      "name": "System Design",
+      "description": "Designs scalable, reliable systems; identifies bottlenecks; makes appropriate tradeoffs between consistency, availability, and performance; communicates design clearly.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "starts with requirements and constraints before proposing a design",
+        "proactively identifies failure modes and how to handle them",
+        "discusses tradeoffs between design choices",
+        "scales the solution to stated load requirements",
+        "mentions observability and monitoring"
+      ],
+      "negative_indicators": [
+        "jumps to a specific technology without clarifying requirements",
+        "cannot reason about scale or bottlenecks",
+        "ignores failure scenarios when asked",
+        "proposes over-engineered solution for a simple problem"
+      ]
+    },
+    {
+      "competency_id": "debugging",
+      "name": "Debugging & Root Cause Analysis",
+      "description": "Approaches bugs systematically; uses evidence to narrow hypotheses; can read and interpret stack traces and logs; distinguishes symptoms from causes.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "states a hypothesis before testing it",
+        "narrows scope using bisection or elimination",
+        "reads error messages carefully before guessing",
+        "distinguishes between the symptom and the root cause",
+        "mentions how they would prevent the bug from recurring"
+      ],
+      "negative_indicators": [
+        "guesses randomly without forming a hypothesis",
+        "cannot read a stack trace",
+        "fixes the symptom without identifying the root cause",
+        "gives up without a systematic approach"
+      ]
+    },
+    {
+      "competency_id": "communication",
+      "name": "Communication & Collaboration",
+      "description": "Explains technical decisions clearly; engages constructively with feedback; works across teams; writes clearly in code and documentation.",
+      "required": true,
+      "weight": 1.0,
+      "positive_indicators": [
+        "explains decisions in terms of tradeoffs, not just preferences",
+        "invites feedback and updates approach when given new information",
+        "describes past collaboration with non-engineers",
+        "gives credit to teammates"
+      ],
+      "negative_indicators": [
+        "dismisses feedback without consideration",
+        "cannot explain a technical decision to a non-technical audience",
+        "takes sole credit for team outcomes",
+        "does not ask clarifying questions on ambiguous problems"
+      ]
+    },
+    {
+      "competency_id": "learning_agility",
+      "name": "Learning Agility",
+      "description": "Picks up new technologies and domains quickly; reflects on past mistakes; asks good questions; shows intellectual curiosity.",
+      "required": false,
+      "weight": 0.75,
+      "positive_indicators": [
+        "describes learning a new technology or domain without guidance",
+        "reflects on a past mistake and what changed afterward",
+        "asks insightful questions about the role or codebase",
+        "connects new concepts to existing knowledge"
+      ],
+      "negative_indicators": [
+        "cannot describe how they stay current technically",
+        "shows no curiosity about the team's technical challenges",
+        "describes past mistakes without any reflection or change"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

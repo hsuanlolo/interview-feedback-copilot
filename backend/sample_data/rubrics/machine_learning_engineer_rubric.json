@@ -1,0 +1,126 @@
+{
+  "rubric_id": "rubric-mle-001",
+  "role_title": "Machine Learning Engineer",
+  "role_level": "Senior IC",
+  "department": "AI / ML Platform",
+  "competencies": [
+    {
+      "competency_id": "ml_fundamentals",
+      "name": "ML Fundamentals & Modeling",
+      "description": "Understands core ML concepts; selects appropriate models for the problem; reasons about bias-variance tradeoff; understands regularization, overfitting, and generalization.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "selects model family with justification for the problem type",
+        "explains bias-variance tradeoff concretely",
+        "discusses regularization and when to apply it",
+        "mentions evaluation metrics appropriate to the task",
+        "identifies overfitting risk and mitigation strategies"
+      ],
+      "negative_indicators": [
+        "reaches for deep learning without considering simpler baselines",
+        "cannot explain why a model type was chosen",
+        "conflates training and validation error",
+        "cannot discuss regularization beyond naming it"
+      ]
+    },
+    {
+      "competency_id": "feature_engineering",
+      "name": "Feature Engineering & Data Pipelines",
+      "description": "Transforms raw data into meaningful features; handles missing values, categorical variables, and distribution issues; builds reliable, reproducible pipelines.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "explains feature encoding choices with justification",
+        "handles missing values thoughtfully rather than just dropping rows",
+        "discusses data leakage and how to prevent it",
+        "thinks about pipeline reproducibility and retraining",
+        "validates data assumptions before modeling"
+      ],
+      "negative_indicators": [
+        "cannot explain why a particular encoding was chosen",
+        "does not consider data leakage in the feature set",
+        "treats missing data carelessly",
+        "does not think about the pipeline beyond the notebook"
+      ]
+    },
+    {
+      "competency_id": "model_evaluation",
+      "name": "Model Evaluation & Validation",
+      "description": "Selects appropriate evaluation metrics; designs robust validation schemes; understands distribution shift; interprets model outputs critically.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "chooses metrics tied to business impact, not just accuracy",
+        "designs train/val/test splits to prevent leakage",
+        "discusses distribution shift and monitoring in production",
+        "interprets confusion matrix and threshold choices",
+        "mentions calibration for probability outputs"
+      ],
+      "negative_indicators": [
+        "defaults to accuracy without considering class imbalance",
+        "uses test set during model selection",
+        "does not mention monitoring after deployment",
+        "cannot interpret precision/recall tradeoff"
+      ]
+    },
+    {
+      "competency_id": "production_ml",
+      "name": "Production ML Systems",
+      "description": "Understands the challenges of deploying ML in production; thinks about latency, throughput, model drift, and monitoring; can describe a basic MLOps workflow.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "distinguishes between training and serving infrastructure",
+        "describes how they would monitor a model post-deployment",
+        "discusses model versioning and rollback strategy",
+        "considers latency constraints when choosing model complexity",
+        "mentions feature store or online/offline feature consistency"
+      ],
+      "negative_indicators": [
+        "treats deployment as handing off a pickle file",
+        "no mention of monitoring or drift detection",
+        "cannot reason about serving latency tradeoffs",
+        "has not thought about model versioning or A/B testing"
+      ]
+    },
+    {
+      "competency_id": "experimentation",
+      "name": "Experimentation",
+      "description": "Designs and interprets A/B tests; understands statistical significance and practical significance; knows when offline metrics translate (or don't) to online metrics.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "explains why randomization is necessary",
+        "discusses power calculation and sample size",
+        "distinguishes statistical significance from practical significance",
+        "identifies when offline improvements may not generalize online",
+        "mentions novelty effects and long-run metric stability"
+      ],
+      "negative_indicators": [
+        "cannot explain why A/B testing requires randomization",
+        "stops analysis at p < 0.05 without effect size discussion",
+        "assumes offline metrics always predict online performance",
+        "does not discuss test duration or sample size"
+      ]
+    },
+    {
+      "competency_id": "communication",
+      "name": "Communication",
+      "description": "Explains ML concepts to non-ML stakeholders; documents model decisions; communicates uncertainty and limitations clearly.",
+      "required": false,
+      "weight": 0.75,
+      "positive_indicators": [
+        "explains a model's limitations to a non-technical stakeholder",
+        "quantifies uncertainty in outputs, not just point estimates",
+        "documents design decisions in code or model cards"
+      ],
+      "negative_indicators": [
+        "cannot explain model behavior to a non-technical audience",
+        "does not mention uncertainty or confidence intervals",
+        "has no practice of documenting model decisions"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

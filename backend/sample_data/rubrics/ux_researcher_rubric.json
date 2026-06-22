@@ -1,0 +1,125 @@
+{
+  "rubric_id": "rubric-uxr-001",
+  "role_title": "User Experience Researcher",
+  "role_level": "Senior IC",
+  "department": "Design & Research",
+  "competencies": [
+    {
+      "competency_id": "research_design",
+      "name": "Research Design & Methodology",
+      "description": "Selects the right method for the research question; designs studies with appropriate controls; distinguishes generative from evaluative research; scopes studies to the decision being made.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "matches method to research question and decision type",
+        "distinguishes generative, evaluative, and validating research",
+        "scopes the study to what the team actually needs to decide",
+        "anticipates threats to study validity",
+        "discusses sample size and recruitment criteria with rationale"
+      ],
+      "negative_indicators": [
+        "defaults to one method regardless of the research question",
+        "cannot explain when to use qualitative vs. quantitative methods",
+        "designs a study that cannot answer the stated question",
+        "ignores constraints like timeline or budget in study design"
+      ]
+    },
+    {
+      "competency_id": "facilitation",
+      "name": "Participant Facilitation",
+      "description": "Conducts interviews and usability tests without leading participants; builds rapport quickly; probes for depth; manages time effectively during sessions.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "uses open-ended questions and avoids leading questions",
+        "probes for underlying motivation, not just stated preference",
+        "builds rapport quickly while maintaining research objectivity",
+        "manages time across a session without cutting off participants"
+      ],
+      "negative_indicators": [
+        "asks leading or yes/no questions",
+        "accepts surface-level answers without probing",
+        "rushes participants or over-talks during sessions",
+        "cannot describe how to recover a session going off-track"
+      ]
+    },
+    {
+      "competency_id": "analysis_synthesis",
+      "name": "Analysis & Synthesis",
+      "description": "Turns raw data into actionable insights; identifies patterns across participants; distinguishes signal from noise; avoids over-claiming from qualitative data.",
+      "required": true,
+      "weight": 2.0,
+      "positive_indicators": [
+        "describes a systematic process for analyzing qualitative data",
+        "identifies themes across participants rather than quoting one",
+        "distinguishes outlier observations from patterns",
+        "separates what participants said from what they meant",
+        "anchors insights to evidence, not interpretation alone"
+      ],
+      "negative_indicators": [
+        "quotes a single participant as representative",
+        "cannot describe how themes were derived from data",
+        "conflates observation with interpretation",
+        "over-generalizes from small or unrepresentative samples"
+      ]
+    },
+    {
+      "competency_id": "insight_communication",
+      "name": "Insight Communication & Storytelling",
+      "description": "Structures findings to drive decisions; tailors delivery to audience; uses evidence appropriately; connects insights to product or business implications.",
+      "required": true,
+      "weight": 1.75,
+      "positive_indicators": [
+        "leads with the implication, not the methodology",
+        "tailors detail level to the audience (PM vs. engineer vs. executive)",
+        "uses concrete user quotes and examples to ground findings",
+        "connects insights explicitly to the decision the team must make"
+      ],
+      "negative_indicators": [
+        "buries the finding in methodology details",
+        "delivers the same presentation regardless of audience",
+        "presents findings without connecting to a product decision",
+        "cannot describe how findings should change the team's direction"
+      ]
+    },
+    {
+      "competency_id": "stakeholder_influence",
+      "name": "Stakeholder Influence",
+      "description": "Builds research credibility with PMs, designers, and engineers; pushes back when research is misused; advocates for the user while being pragmatic about constraints.",
+      "required": true,
+      "weight": 1.5,
+      "positive_indicators": [
+        "describes how they earn trust from teams that are skeptical of research",
+        "pushes back when a stakeholder misinterprets a finding",
+        "advocates for user needs while acknowledging business constraints",
+        "involves stakeholders in the research process, not just the readout"
+      ],
+      "negative_indicators": [
+        "accepts misinterpretation of findings without correction",
+        "cannot describe how to build credibility with a skeptical team",
+        "presents research in isolation from the decision context",
+        "does not adapt communication based on stakeholder feedback"
+      ]
+    },
+    {
+      "competency_id": "ethics",
+      "name": "Ethical Research Practices",
+      "description": "Obtains informed consent; protects participant privacy and data; considers equity and inclusion in participant recruitment; reports findings honestly without omitting inconvenient results.",
+      "required": true,
+      "weight": 1.25,
+      "positive_indicators": [
+        "describes consent process and how they explain data use",
+        "actively recruits for diversity and explains why it matters",
+        "reports negative or inconclusive findings honestly",
+        "discusses data retention and anonymization practices"
+      ],
+      "negative_indicators": [
+        "cannot describe how they obtain and document informed consent",
+        "recruits only convenient participants without questioning the bias",
+        "omits inconclusive findings from reports",
+        "has no practice around participant data privacy"
+      ]
+    }
+  ],
+  "created_at": "2024-06-01T00:00:00Z"
+}

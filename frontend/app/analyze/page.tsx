@@ -15,11 +15,13 @@ import {
   extractLLM,
   getCoverageMap,
   getDisagreements,
+  getRubricById,
   getSampleDebriefs,
-  getSampleRubric,
+  listRubrics,
   synthesize,
   updateReview,
   verifyEvidence,
+  type RubricMeta,
 } from '@/lib/api';
 import { SignalCard } from '@/components/SignalCard';
 import { CompetencyGrid } from '@/components/CompetencyGrid';
@@ -108,16 +110,56 @@ export default function AnalyzePage() {
   const [newInterviewerName, setNewInterviewerName] = useState('');
   const [newDebriefText, setNewDebriefText] = useState('');
 
-  async function handleLoadSampleRubric() {
+  // Rubric picker state
+  const [rubricList, setRubricList] = useState<RubricMeta[]>([]);
+  const [selectedRubricId, setSelectedRubricId] = useState('');
+  const [rubricJson, setRubricJson] = useState('');
+  const [rubricJsonError, setRubricJsonError] = useState<string | null>(null);
+  const [rubricListLoaded, setRubricListLoaded] = useState(false);
+
+  async function handleOpenRubricPicker() {
+    if (rubricListLoaded) return;
     setLoading(true);
     setError(null);
     try {
-      const r = await getSampleRubric();
-      setRubric(r);
+      const list = await listRubrics();
+      setRubricList(list);
+      if (list.length > 0) setSelectedRubricId(list[0].rubric_id);
+      setRubricListLoaded(true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleLoadRubric() {
+    if (!selectedRubricId) return;
+    setLoading(true);
+    setError(null);
+    setRubricJsonError(null);
+    try {
+      const r = await getRubricById(selectedRubricId);
+      setRubric(r);
+      setRubricJson(JSON.stringify(r, null, 2));
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleApplyRubricJson() {
+    setRubricJsonError(null);
+    try {
+      const parsed = JSON.parse(rubricJson) as RoleRubric;
+      if (!parsed.role_title || !Array.isArray(parsed.competencies)) {
+        setRubricJsonError('Invalid rubric: must have role_title and competencies[]');
+        return;
+      }
+      setRubric(parsed);
+    } catch {
+      setRubricJsonError('Invalid JSON — check for missing commas or brackets');
     }
   }
 
@@ -158,8 +200,7 @@ export default function AnalyzePage() {
     setLoading(true);
     setError(null);
     try {
-      const [r, d] = await Promise.all([getSampleRubric(), getSampleDebriefs()]);
-      setRubric(r);
+      const d = await getSampleDebriefs();
       setDebriefs(d);
     } catch (e) {
       setError((e as Error).message);
@@ -311,35 +352,91 @@ export default function AnalyzePage() {
             </div>
           </div>
 
-          {/* ── Option A: Sample Data ───────────────────────────── */}
-          <div className="border border-slate-200 rounded-lg p-4 bg-white space-y-3">
+          {/* ── Step 1A: Pick a Rubric ──────────────────────────── */}
+          <div className="border border-slate-200 rounded-lg p-4 bg-white space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-slate-800">Step 1 — Choose a Rubric</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Pick a built-in role rubric, then edit the JSON to match your team's qualifications.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <select
+                value={selectedRubricId}
+                onFocus={handleOpenRubricPicker}
+                onChange={(e) => setSelectedRubricId(e.target.value)}
+                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 bg-white"
+              >
+                {rubricList.length === 0 && (
+                  <option value="">— click to load roles —</option>
+                )}
+                {rubricList.map((r) => (
+                  <option key={r.rubric_id} value={r.rubric_id}>
+                    {r.role_title} · {r.role_level}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleLoadRubric}
+                disabled={loading || !selectedRubricId}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-40 transition-colors whitespace-nowrap"
+              >
+                {loading && <Spinner />}
+                Load Rubric
+              </button>
+            </div>
+
+            {rubricJson && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-slate-700">
+                    Rubric JSON — edit to customize competencies and indicators
+                  </label>
+                  <button
+                    onClick={handleApplyRubricJson}
+                    className="text-xs px-3 py-1 bg-emerald-700 text-white rounded-md hover:bg-emerald-800 transition-colors"
+                  >
+                    Apply Changes
+                  </button>
+                </div>
+                <textarea
+                  value={rubricJson}
+                  onChange={(e) => { setRubricJson(e.target.value); setRubricJsonError(null); }}
+                  rows={14}
+                  spellCheck={false}
+                  className="w-full border border-slate-300 rounded-md px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-slate-400 resize-y"
+                />
+                {rubricJsonError && (
+                  <p className="text-xs text-red-600">{rubricJsonError}</p>
+                )}
+                {rubric && !rubricJsonError && (
+                  <p className="text-xs text-emerald-600">
+                    ✓ Active: {rubric.role_title} — {rubric.competencies.length} competencies
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* ── Also load sample debriefs (optional) ────────────── */}
+          <div className="border border-slate-200 rounded-lg p-4 bg-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-medium text-slate-800">Option A — Load Sample Data</h3>
+                <h3 className="text-sm font-medium text-slate-800">Load Sample Debriefs (optional)</h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Synthetic Data Scientist rubric with 3 pre-written debriefs. First load may take ~60s (server cold start).
+                  Loads 3 synthetic debriefs to test the pipeline end-to-end.
                 </p>
               </div>
               <button
                 onClick={handleLoadSampleData}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 border border-slate-300 text-slate-700 text-sm rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 {loading && <Spinner />}
-                {rubric ? 'Reload Sample' : 'Load Sample'}
+                Load Sample Debriefs
               </button>
             </div>
-
-            {rubric && (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-md p-3 text-sm space-y-1">
-                <p className="text-emerald-800 font-medium">
-                  Rubric: {rubric.role_title} ({rubric.competencies.length} competencies)
-                </p>
-                <p className="text-emerald-700">
-                  Debriefs: {debriefs.length} loaded ({debriefs.map((d) => d.interviewer_name).join(', ')})
-                </p>
-              </div>
-            )}
           </div>
 
           {/* ── Option B: Add Your Own Debriefs ─────────────────── */}
@@ -413,25 +510,13 @@ export default function AnalyzePage() {
               </div>
             )}
 
-            <div className="pt-1 border-t border-slate-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-slate-700">Rubric (required to proceed)</p>
-                  {rubric
-                    ? <p className="text-xs text-emerald-600 mt-0.5">✓ {rubric.role_title} loaded ({rubric.competencies.length} competencies)</p>
-                    : <p className="text-xs text-slate-400 mt-0.5">No rubric loaded — load the sample rubric to test</p>
-                  }
-                </div>
-                <button
-                  onClick={handleLoadSampleRubric}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 text-slate-700 text-xs rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
-                >
-                  {loading && <Spinner />}
-                  {rubric ? 'Reload Rubric' : 'Load Sample Rubric'}
-                </button>
+            {!rubric && (
+              <div className="pt-1 border-t border-slate-100">
+                <p className="text-xs text-slate-500">
+                  Rubric required — use <span className="font-medium text-slate-700">Step 1</span> above to choose and load one.
+                </p>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="flex justify-end">

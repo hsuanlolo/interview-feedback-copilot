@@ -31,6 +31,22 @@ export function checkHealth() {
   return request<{ status: string; version: string; llm_mode: string }>('/health');
 }
 
+export interface RubricMeta {
+  rubric_id: string;
+  role_title: string;
+  role_level: string;
+  department: string;
+  filename: string;
+}
+
+export function listRubrics() {
+  return request<RubricMeta[]>('/rubrics/list');
+}
+
+export function getRubricById(rubricId: string) {
+  return request<RoleRubric>(`/rubrics/by-id/${rubricId}`);
+}
+
 export function getSampleRubric() {
   return request<RoleRubric>('/rubrics/sample');
 }
