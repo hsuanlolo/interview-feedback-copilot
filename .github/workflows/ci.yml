@@ -23,7 +23,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -e ".[dev]"
+        run: pip install -r requirements.txt pytest>=8.2.0 pytest-asyncio>=0.23.0 ruff>=0.4.0
 
       - name: Lint (ruff)
         run: ruff check app/ && ruff format --check app/
@@ -31,12 +31,14 @@ jobs:
       - name: Test
         env:
           LLM_MOCK_MODE: "true"
+          PYTHONPATH: ${{ github.workspace }}/backend
         run: python -m pytest app/tests/ -v --tb=short
 
       - name: Eval suite
         env:
           LLM_MOCK_MODE: "true"
-        run: python -m app.evals.run_eval --gold-dir ../sample_data/gold
+          PYTHONPATH: ${{ github.workspace }}/backend
+        run: python -m app.evals.run_eval --gold-dir sample_data/gold
 
   frontend:
     name: Frontend — type-check + build
