@@ -11,6 +11,6 @@ services:
       - key: CORS_ORIGINS
         sync: false          # set to your Vercel URL after frontend deploys
       - key: DATABASE_URL
-        value: sqlite:///./interview_copilot.db
+        value: sqlite+aiosqlite:///./interview_copilot.db
       - key: LLM_MOCK_MODE
         value: "false"
