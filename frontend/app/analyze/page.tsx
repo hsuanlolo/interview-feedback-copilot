@@ -479,12 +479,15 @@ export default function AnalyzePage() {
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <label className="cursor-pointer text-xs text-slate-600 underline underline-offset-2 hover:text-slate-900">
+              <div className="flex items-center gap-2 flex-wrap">
+                <label className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 text-slate-700 text-xs rounded-lg hover:bg-slate-50 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
                   Upload .txt or .docx
                   <input type="file" accept=".txt,.md,.docx" onChange={handleFileUpload} className="hidden" />
                 </label>
-                <span className="text-slate-300 text-xs">or paste above</span>
+                <span className="text-slate-300 text-xs">— or paste text above</span>
                 <div className="flex-1" />
                 <button
                   onClick={handleAddDebrief}
