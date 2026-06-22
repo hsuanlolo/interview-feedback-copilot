@@ -108,6 +108,19 @@ export default function AnalyzePage() {
   const [newInterviewerName, setNewInterviewerName] = useState('');
   const [newDebriefText, setNewDebriefText] = useState('');
 
+  async function handleLoadSampleRubric() {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await getSampleRubric();
+      setRubric(r);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   function handleAddDebrief() {
     if (!newInterviewerName.trim() || !newDebriefText.trim()) return;
     const debrief: InterviewDebrief = {
@@ -394,6 +407,26 @@ export default function AnalyzePage() {
                 ))}
               </div>
             )}
+
+            <div className="pt-1 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-700">Rubric (required to proceed)</p>
+                  {rubric
+                    ? <p className="text-xs text-emerald-600 mt-0.5">✓ {rubric.role_title} loaded ({rubric.competencies.length} competencies)</p>
+                    : <p className="text-xs text-slate-400 mt-0.5">No rubric loaded — load the sample rubric to test</p>
+                  }
+                </div>
+                <button
+                  onClick={handleLoadSampleRubric}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-300 text-slate-700 text-xs rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-colors"
+                >
+                  {loading && <Spinner />}
+                  {rubric ? 'Reload Rubric' : 'Load Sample Rubric'}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end">
