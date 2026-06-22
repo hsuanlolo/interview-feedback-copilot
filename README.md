@@ -6,6 +6,9 @@ A full-stack AI tool that helps hiring teams synthesize interview debriefs into 
 
 **232 tests · TypeScript clean · eval suite passing · Dockerized · GitHub Actions CI**
 
+**[Live demo → interview-feedback-copilot.vercel.app](https://interview-feedback-copilot.vercel.app)**
+*(Frontend on Vercel · Backend on Render free tier — first request after inactivity may take ~30 s to wake up)*
+
 ---
 
 ## What This Demonstrates
@@ -150,7 +153,7 @@ interview-feedback-copilot/
 │   └── Dockerfile
 ├── sample_data/
 │   ├── debriefs/             5 synthetic interview debriefs
-│   ├── rubrics/              Data Scientist role rubric
+│   ├── rubrics/              6 built-in role rubrics (Data Scientist, SWE, MLE, DE, Quant Researcher, UX Researcher)
 │   └── gold/                 Gold-labeled eval dataset
 ├── docs/                     Product brief, architecture, decisions, eval plan, learning log
 ├── .github/workflows/ci.yml  GitHub Actions CI
